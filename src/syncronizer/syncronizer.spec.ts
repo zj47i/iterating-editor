@@ -1,9 +1,9 @@
 // hello-world.test.js
 import "@testing-library/jest-dom";
 import { Synchronizer } from "./syncronizer";
-import { StateNode } from "./state-node";
+import { StateNode } from "../state-node/state-node";
 
-test("초기 state 확인", () => {
+test("syncDom", () => {
     // 테스트할 DOM 작성
     document.body.innerHTML = `
     <div id="@editor">Hello World!</div>
