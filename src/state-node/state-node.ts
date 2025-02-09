@@ -1,42 +1,88 @@
-export class StateNode {
-    public type: string;
-    public parent: StateNode | null;
-    public children: StateNode[];
-    public text?: string;
-    public format?: string[];
+import { StateNodeDiff, StateNodeType } from "./state-node.enum";
 
-    constructor(type: string, parent: StateNode | null = null) {
+export class StateNode {
+    public type: StateNodeType;
+    public parent: StateNode | undefined;
+    public children: StateNode[];
+    private text?: string | undefined;
+    public format?: string[];
+    public diff: StateNodeDiff;
+
+    constructor(type: StateNodeType) {
         this.type = type;
-        this.parent = parent;
         this.children = [];
+        if (type !== "root") {
+            this.diff = StateNodeDiff.INSERT;
+        }
+    }
+
+    delete() {
+        const parent = this.parent;
+        if (!parent) {
+            console.error("no parent");
+            return;
+        }
+        const index = parent.children.indexOf(this);
+        parent.children.splice(index, 1);
+        this.parent = undefined;
+        this.diff = StateNodeDiff.DELETE;
     }
 
     appendNode(node: StateNode) {
+        if (node.parent) {
+            console.error("node already has parent. detach first");
+            return;
+        }
         this.children.push(node);
+        node.parent = this;
     }
 
-    setText(text: string, index: number) {
+    isEmpty() {
+        return this.children.length === 0;
+    }
+
+    public getText() {
         if (this.type !== "span") {
             console.error("only span node can have text");
             return;
         }
+        return this.text;
+    }
+
+    public setText(text: string) {
+        if (this.type !== "span") {
+            console.error("only span node can have text");
+            return;
+        }
+        this.text = text;
+    }
+
+    public modifyText(text: string) {
+        if (this.type !== "span") {
+            console.error("only span node can have text");
+            return;
+        }
+        this.text = text;
+        this.diff = StateNodeDiff.MODIFY;
+    }
+
+    public spliceText(text: string, index = 0) {
+        if (this.type !== "span") {
+            console.error("only span node can have text");
+            return;
+        }
+        if (this.text === undefined) {
+            this.text = "";
+        }
         this.text = this.text.slice(0, index) + text + this.text.slice(index);
+        this.diff = StateNodeDiff.MODIFY;
     }
 
-    static createDefaultState(): StateNode {
-        const root = new StateNode("root");
-
-        const paragraph = new StateNode("paragraph", root);
-        root.appendNode(paragraph);
-
-        const span = new StateNode("span", paragraph);
-        span.text = "12312312321";
-        paragraph.appendNode(span);
-
-        return root;
+    static createRootState(): StateNode {
+        return new StateNode(StateNodeType.ROOT);
     }
 
-    public findPathToNode(node: StateNode): StateNode[] {
+    public findPathToAncestorNode(node: StateNode): StateNode[] {
         const path: StateNode[] = [];
         let current: StateNode = this;
         while (current !== node) {
@@ -49,7 +95,7 @@ export class StateNode {
 
     public findPathToRoot(): StateNode[] {
         const path: StateNode[] = [];
-        let current: StateNode | null = this;
+        let current: StateNode = this;
         while (current) {
             path.push(current);
             current = current.parent;
@@ -60,7 +106,7 @@ export class StateNode {
     public static findLowestCommonAncestor(
         node1: StateNode,
         node2: StateNode
-    ): StateNode | null {
+    ): StateNode | undefined {
         const path1 = node1.findPathToRoot();
         const path2 = node2.findPathToRoot();
         const setPath2 = new Set(path2);
@@ -150,13 +196,28 @@ export class StateNode {
         return result;
     }
 
+    public levelOrderTraversal(): StateNode[] {
+        const result: StateNode[] = [this];
+        const stack: StateNode[] = [this];
+
+        while (stack.length > 0) {
+            const current = stack.shift();
+            for (const child of current.children) {
+                result.push(child);
+                stack.push(child);
+            }
+        }
+
+        return result;
+    }
+
     static determineLeftRight(
         node1: StateNode,
         node2: StateNode
     ): [StateNode, StateNode] {
         const ancestor = StateNode.findLowestCommonAncestor(node1, node2);
-        const path1 = node1.findPathToNode(ancestor);
-        const path2 = node2.findPathToNode(ancestor);
+        const path1 = node1.findPathToAncestorNode(ancestor);
+        const path2 = node2.findPathToAncestorNode(ancestor);
         if (path1.length === 1) {
             return [node1, node2];
         }
@@ -179,15 +240,18 @@ export class StateNode {
         return [node1, node2];
     }
 
-    public static findStatesBetween(node1: StateNode, node2: StateNode): StateNode[] {
+    public static findStatesBetween(
+        node1: StateNode,
+        node2: StateNode
+    ): StateNode[] {
         const result: StateNode[] = [];
 
         const [left, right] = StateNode.determineLeftRight(node1, node2);
 
         const ancestor = StateNode.findLowestCommonAncestor(left, right);
-        const path1 = left.findPathToNode(ancestor);
-        const path2 = right.findPathToNode(ancestor);
-        
+        const path1 = left.findPathToAncestorNode(ancestor);
+        const path2 = right.findPathToAncestorNode(ancestor);
+
         if (path1.length === 1) {
             result.push(...StateNode.traversalBeforePath(path2));
             return result;
@@ -200,13 +264,32 @@ export class StateNode {
         const index1 = ancestor.children.indexOf(path1[path1.length - 2]);
         const index2 = ancestor.children.indexOf(path2[path2.length - 2]);
 
-        result.push(...StateNode.traversalAfterPath(path1.slice(0, path1.length - 1)));
+        result.push(
+            ...StateNode.traversalAfterPath(path1.slice(0, path1.length - 1))
+        );
         for (let i = index1 + 1; i < index2; i++) {
             result.push(...ancestor.children[i].preOrderTraversal());
         }
-        result.push(...StateNode.traversalBeforePath(path2.slice(0, path2.length - 1)));
-
+        result.push(
+            ...StateNode.traversalBeforePath(path2.slice(0, path2.length - 1))
+        );
 
         return result;
+    }
+
+    public addNextSiblings(nodes: StateNode[]) {
+        for (const node of nodes) {
+            if (node.parent) {
+                console.error("node already has parent. detach first");
+            }
+        }
+
+        this.parent.children.splice(
+            this.parent.children.indexOf(this) + 1,
+            0,
+            ...nodes
+        );
+
+        nodes.forEach((node) => (node.parent = this.parent));
     }
 }

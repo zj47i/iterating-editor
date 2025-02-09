@@ -3,6 +3,7 @@ import { mockStateTree } from "./state-node.mock";
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { mockStateTree2 } from "./state-node.mock2";
 import { StateNode } from "./state-node";
+import { StateNodeType } from "./state-node.enum";
 
 test("traversalAfterPath", () => {
     const state = mockStateTree();
@@ -71,47 +72,47 @@ test("preOrderTraversal", () => {
 
     const order = state.root.preOrderTraversal();
     expect(order.length).toBe(41);
-    expect(order[0].type).toBe("root");
-    expect(order[1].type).toBe("paragraph1");
-    expect(order[2].type).toBe("span1");
-    expect(order[3].type).toBe("span2");
-    expect(order[4].type).toBe("span3");
-    expect(order[5].type).toBe("paragraph2");
-    expect(order[6].type).toBe("span4");
-    expect(order[7].type).toBe("nestedParagraph1");
-    expect(order[8].type).toBe("span5");
-    expect(order[9].type).toBe("span6");
-    expect(order[10].type).toBe("nestedParagraph2");
-    expect(order[11].type).toBe("span7");
-    expect(order[12].type).toBe("span8");
-    expect(order[13].type).toBe("paragraph3");
-    expect(order[14].type).toBe("span9");
-    expect(order[15].type).toBe("span9Child1");
-    expect(order[16].type).toBe("span9Child2");
-    expect(order[17].type).toBe("span10");
-    expect(order[18].type).toBe("span10Child1");
-    expect(order[19].type).toBe("span10Child2");
-    expect(order[20].type).toBe("span10Child2Nested1");
-    expect(order[21].type).toBe("span10Child2Nested2");
-    expect(order[22].type).toBe("nestedParagraph3");
-    expect(order[23].type).toBe("span11");
-    expect(order[24].type).toBe("span12");
-    expect(order[25].type).toBe("deepNestedParagraph1");
-    expect(order[26].type).toBe("span13");
-    expect(order[27].type).toBe("span14");
-    expect(order[28].type).toBe("paragraph4");
-    expect(order[29].type).toBe("span15");
-    expect(order[30].type).toBe("span16");
-    expect(order[31].type).toBe("nestedParagraph4");
-    expect(order[32].type).toBe("span17");
-    expect(order[33].type).toBe("span18");
-    expect(order[34].type).toBe("deeperNestedParagraph");
-    expect(order[35].type).toBe("span19");
-    expect(order[36].type).toBe("span20");
-    expect(order[37].type).toBe("paragraph5");
-    expect(order[38].type).toBe("span21");
-    expect(order[39].type).toBe("span22");
-    expect(order[40].type).toBe("span23");
+    expect(order[0]).toBe(state.root);
+    expect(order[1]).toBe(state.paragraph1);
+    expect(order[2]).toBe(state.span1);
+    expect(order[3]).toBe(state.span2);
+    expect(order[4]).toBe(state.span3);
+    expect(order[5]).toBe(state.paragraph2);
+    expect(order[6]).toBe(state.span4);
+    expect(order[7]).toBe(state.nestedParagraph1);
+    expect(order[8]).toBe(state.span5);
+    expect(order[9]).toBe(state.span6);
+    expect(order[10]).toBe(state.nestedParagraph2);
+    expect(order[11]).toBe(state.span7);
+    expect(order[12]).toBe(state.span8);
+    expect(order[13]).toBe(state.paragraph3);
+    expect(order[14]).toBe(state.span9);
+    expect(order[15]).toBe(state.span9Child1);
+    expect(order[16]).toBe(state.span9Child2);
+    expect(order[17]).toBe(state.span10);
+    expect(order[18]).toBe(state.span10Child1);
+    expect(order[19]).toBe(state.span10Child2);
+    expect(order[20]).toBe(state.span10Child2Nested1);
+    expect(order[21]).toBe(state.span10Child2Nested2);
+    expect(order[22]).toBe(state.nestedParagraph3);
+    expect(order[23]).toBe(state.span11);
+    expect(order[24]).toBe(state.span12);
+    expect(order[25]).toBe(state.deepNestedParagraph1);
+    expect(order[26]).toBe(state.span13);
+    expect(order[27]).toBe(state.span14);
+    expect(order[28]).toBe(state.paragraph4);
+    expect(order[29]).toBe(state.span15);
+    expect(order[30]).toBe(state.span16);
+    expect(order[31]).toBe(state.nestedParagraph4);
+    expect(order[32]).toBe(state.span17);
+    expect(order[33]).toBe(state.span18);
+    expect(order[34]).toBe(state.deeperNestedParagraph);
+    expect(order[35]).toBe(state.span19);
+    expect(order[36]).toBe(state.span20);
+    expect(order[37]).toBe(state.paragraph5);
+    expect(order[38]).toBe(state.span21);
+    expect(order[39]).toBe(state.span22);
+    expect(order[40]).toBe(state.span23);
 });
 
 test("findPathToRoot", () => {
@@ -299,7 +300,10 @@ test("determineLeftRight", () => {
     expect(left1).toBe(state.span2);
     expect(right1).toBe(state.paragraph4);
 
-    const [left2, right2] = StateNode.determineLeftRight(state.span19, state.span18);
+    const [left2, right2] = StateNode.determineLeftRight(
+        state.span19,
+        state.span18
+    );
     expect(left2).toBe(state.span18);
     expect(right2).toBe(state.span19);
 });
@@ -315,7 +319,10 @@ test("determineLeftRight2", () => {
     expect(left1).toBe(state.span2);
     expect(right1).toBe(state.paragraph4);
 
-    const [left2, right2] = StateNode.determineLeftRight(state.span19, state.span13);
+    const [left2, right2] = StateNode.determineLeftRight(
+        state.span19,
+        state.span13
+    );
     expect(left2).toBe(state.span13);
     expect(right2).toBe(state.span19);
 });
@@ -331,7 +338,71 @@ test("determineLeftRight2", () => {
     expect(left1).toBe(state.paragraph3);
     expect(right1).toBe(state.span10Child2Nested1);
 
-    const [left2, right2] = StateNode.determineLeftRight(state.span10Child2Nested1, state.paragraph3);
+    const [left2, right2] = StateNode.determineLeftRight(
+        state.span10Child2Nested1,
+        state.paragraph3
+    );
     expect(left1).toBe(state.paragraph3);
     expect(right1).toBe(state.span10Child2Nested1);
 });
+
+test("addNextSiblings", () => {
+    const state = mockStateTree();
+
+    const span4 = state.span4;
+    const parent = span4.parent;
+    const index = parent.children.indexOf(span4);
+
+    const newSpan1 = new StateNode(StateNodeType.SPAN);
+    const newSpan2 = new StateNode(StateNodeType.SPAN);
+    span4.addNextSiblings([newSpan1, newSpan2]);
+
+    expect(parent.children[index]).toBe(span4);
+    expect(parent.children[index + 1]).toBe(newSpan1);
+    expect(parent.children[index + 2]).toBe(newSpan2);
+    expect(parent.children[index + 3]).toBe(state.nestedParagraph1);
+});
+
+test("spliceText", () => {
+    const span = new StateNode(StateNodeType.SPAN);
+    span.spliceText("Hello, World!");
+    span.spliceText("Hello, World!", 5);
+    expect(span.getText()).toBe("HelloHello, World!, World!");
+});
+
+test("levelOrderTraversal", () => {
+    const state = mockStateTree();
+
+    const order = state.root.levelOrderTraversal();
+
+    expect(order.length).toBe(29);
+    expect(order[0]).toBe(state.root);
+    expect(order[1]).toBe(state.paragraph1);
+    expect(order[2]).toBe(state.paragraph2);
+    expect(order[3]).toBe(state.paragraph3);
+    expect(order[4]).toBe(state.paragraph4);
+    expect(order[5]).toBe(state.paragraph5);
+    expect(order[6]).toBe(state.span1);
+    expect(order[7]).toBe(state.span2);
+    expect(order[8]).toBe(state.span3);
+    expect(order[9]).toBe(state.span4);
+    expect(order[10]).toBe(state.nestedParagraph1);
+    expect(order[11]).toBe(state.nestedParagraph2);
+    expect(order[12]).toBe(state.span8);
+    expect(order[13]).toBe(state.span9);
+    expect(order[14]).toBe(state.span10);
+    expect(order[15]).toBe(state.span11);
+    expect(order[16]).toBe(state.span12);
+    expect(order[17]).toBe(state.span13);
+    expect(order[18]).toBe(state.span14);
+    expect(order[19]).toBe(state.span15);
+    expect(order[20]).toBe(state.span16);
+    expect(order[21]).toBe(state.nestedParagraph3);
+    expect(order[22]).toBe(state.span19);
+    expect(order[23]).toBe(state.span20);
+    expect(order[24]).toBe(state.span5);
+    expect(order[25]).toBe(state.span6);
+    expect(order[26]).toBe(state.span7);
+    expect(order[27]).toBe(state.span17);
+    expect(order[28]).toBe(state.span18);
+})

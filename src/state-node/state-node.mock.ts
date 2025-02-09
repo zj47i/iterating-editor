@@ -29,100 +29,121 @@
 //     └── span20
 
 import { StateNode } from "../state-node/state-node";
+import { StateNodeType } from "./state-node.enum";
 
 export function mockStateTree() {
-    const root = new StateNode("root");
+    const root = new StateNode(StateNodeType.ROOT);
 
     // paragraph1 구성
-    const paragraph1 = new StateNode("paragraph1", root);
+    const paragraph1 = new StateNode(StateNodeType.PARAGRAPH);
     root.appendNode(paragraph1);
 
-    const span1 = new StateNode("span1", paragraph1);
+    const span1 = new StateNode(StateNodeType.SPAN);
+    span1.setText("span1");
     paragraph1.appendNode(span1);
 
-    const span2 = new StateNode("span2", paragraph1);
+    const span2 = new StateNode(StateNodeType.SPAN);
+    span2.setText("span2");
     paragraph1.appendNode(span2);
 
-    const span3 = new StateNode("span3", paragraph1);
+    const span3 = new StateNode(StateNodeType.SPAN);
+    span3.setText("span3");
     paragraph1.appendNode(span3);
 
     // paragraph2 구성
-    const paragraph2 = new StateNode("paragraph2", root);
+    const paragraph2 = new StateNode(StateNodeType.PARAGRAPH);
     root.appendNode(paragraph2);
 
-    const span4 = new StateNode("span4", paragraph2);
+    const span4 = new StateNode(StateNodeType.SPAN);
+    span4.setText("span4");
     paragraph2.appendNode(span4);
 
     // 중첩 paragraph within paragraph2
-    const nestedParagraph1 = new StateNode("nestedParagraph1", paragraph2);
+    const nestedParagraph1 = new StateNode(StateNodeType.PARAGRAPH);
     paragraph2.appendNode(nestedParagraph1);
 
-    const span5 = new StateNode("span5", nestedParagraph1);
+    const span5 = new StateNode(StateNodeType.SPAN);
+    span5.setText("span5");
     nestedParagraph1.appendNode(span5);
 
-    const span6 = new StateNode("span6", nestedParagraph1);
+    const span6 = new StateNode(StateNodeType.SPAN);
+    span6.setText("span6");
     nestedParagraph1.appendNode(span6);
 
-    const nestedParagraph2 = new StateNode("nestedParagraph2", paragraph2);
+    const nestedParagraph2 = new StateNode(StateNodeType.PARAGRAPH);
     paragraph2.appendNode(nestedParagraph2);
 
-    const span7 = new StateNode("span7", nestedParagraph2);
+    const span7 = new StateNode(StateNodeType.SPAN);
+    span7.setText("span7");
     nestedParagraph2.appendNode(span7);
 
     // paragraph3 구성
-    const paragraph3 = new StateNode("paragraph3", root);
+    const paragraph3 = new StateNode(StateNodeType.PARAGRAPH);
     root.appendNode(paragraph3);
 
-    const span8 = new StateNode("span8", paragraph3);
+    const span8 = new StateNode(StateNodeType.SPAN);
+    span8.setText("span8");
     paragraph3.appendNode(span8);
 
     // 위 for문 대신 풀어서
-    const span9 = new StateNode("span9", paragraph3);
+    const span9 = new StateNode(StateNodeType.SPAN);
+    span9.setText("span9");
     paragraph3.appendNode(span9);
 
-    const span10 = new StateNode("span10", paragraph3);
+    const span10 = new StateNode(StateNodeType.SPAN);
+    span10.setText("span10");
     paragraph3.appendNode(span10);
 
-    const span11 = new StateNode("span11", paragraph3);
+    const span11 = new StateNode(StateNodeType.SPAN);
+    span11.setText("span11");
     paragraph3.appendNode(span11);
 
-    const span12 = new StateNode("span12", paragraph3);
+    const span12 = new StateNode(StateNodeType.SPAN);
+    span12.setText("span12");
     paragraph3.appendNode(span12);
 
-    const span13 = new StateNode("span13", paragraph3);
+    const span13 = new StateNode(StateNodeType.SPAN);
+    span13.setText("span13");
     paragraph3.appendNode(span13);
 
-    const span14 = new StateNode("span14", paragraph3);
+    const span14 = new StateNode(StateNodeType.SPAN);
+    span14.setText("span14");
     paragraph3.appendNode(span14);
 
-    const span15 = new StateNode("span15", paragraph3);
+    const span15 = new StateNode(StateNodeType.SPAN);
+    span15.setText("span15");
     paragraph3.appendNode(span15);
 
     // paragraph4 구성
-    const paragraph4 = new StateNode("paragraph4", root);
+    const paragraph4 = new StateNode(StateNodeType.PARAGRAPH);
     root.appendNode(paragraph4);
 
-    const span16 = new StateNode("span16", paragraph4);
+    const span16 = new StateNode(StateNodeType.SPAN);
+    span16.setText("span16");
     paragraph4.appendNode(span16);
 
     // paragraph4 내 중첩 구조 추가
-    const nestedParagraph3 = new StateNode("nestedParagraph3", paragraph4);
+    const nestedParagraph3 = new StateNode(StateNodeType.PARAGRAPH);
     paragraph4.appendNode(nestedParagraph3);
 
-    const span17 = new StateNode("span17", nestedParagraph3);
+    const span17 = new StateNode(StateNodeType.SPAN);
+    span17.setText("span17");
     nestedParagraph3.appendNode(span17);
 
-    const span18 = new StateNode("span18", nestedParagraph3);
+    const span18 = new StateNode(StateNodeType.SPAN);
+    span18.setText("span18");
     nestedParagraph3.appendNode(span18);
 
     // paragraph5 구성
-    const paragraph5 = new StateNode("paragraph5", root);
+    const paragraph5 = new StateNode(StateNodeType.PARAGRAPH);
     root.appendNode(paragraph5);
 
-    const span19 = new StateNode("span19", paragraph5);
+    const span19 = new StateNode(StateNodeType.SPAN);
+    span19.setText("span19");
     paragraph5.appendNode(span19);
 
-    const span20 = new StateNode("span20", paragraph5);
+    const span20 = new StateNode(StateNodeType.SPAN);
+    span20.setText("span20");
     paragraph5.appendNode(span20);
 
     return {
