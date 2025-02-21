@@ -160,7 +160,7 @@ test("findLowestCommonAncestor", () => {
     expect(anscestor4).toBe(state.paragraph2);
 });
 
-test("findLowestCommonAncestor", () => {
+test("findLowestCommonAncestor2", () => {
     const state = mockStateTree();
 
     const anscestor1 = StateNode.findLowestCommonAncestor(
@@ -327,7 +327,7 @@ test("determineLeftRight2", () => {
     expect(right2).toBe(state.span19);
 });
 
-test("determineLeftRight2", () => {
+test("determineLeftRight3", () => {
     const state = mockStateTree2();
 
     const [left1, right1] = StateNode.determineLeftRight(
@@ -405,4 +405,4 @@ test("levelOrderTraversal", () => {
     expect(order[26]).toBe(state.span7);
     expect(order[27]).toBe(state.span17);
     expect(order[28]).toBe(state.span18);
-})
+});

@@ -5,7 +5,7 @@ export enum StateNodeType {
 }
 
 export enum StateNodeDiff {
-    INSERT = "insert",
-    DELETE = "delete",
-    MODIFY = "modify",
+    INSERTED = "inserted",
+    DELETED = "deleted",
+    MODIFIED = "modified",
 }

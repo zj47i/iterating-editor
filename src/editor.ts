@@ -1,32 +1,34 @@
+import { Command } from "./command/command";
 import { DomElement } from "./dom/dom-element";
 import { StateNode } from "./state-node/state-node";
 import { StateNodeDiff, StateNodeType } from "./state-node/state-node.enum";
 import { Synchronizer } from "./syncronizer/syncronizer";
 
-const CURSOR_ON_EVENTS = ["mouseup"];
-const TYPE_EVENT = ["input"];
-
 export class Editor {
     private state: StateNode;
     private sync: Synchronizer;
+    private command: Command;
 
-    constructor(private editorRoot: HTMLDivElement, private plainState?: JSON) {
-        this.registerNewLine();
-        this.registerEventListener();
-        this.registerBold();
+    constructor(private editorRoot: HTMLDivElement) {
         this.editorRoot.contentEditable = "true";
         this.state = StateNode.createRootState();
-        this.state.appendNode(new StateNode(StateNodeType.PARAGRAPH));
         this.sync = new Synchronizer(editorRoot, this.state);
+
+        this.state.appendNode(new StateNode(StateNodeType.PARAGRAPH));
         this.sync.syncEditor();
+
+        this.command = new Command(this.editorRoot, this.state);
+        this.addEventListener();
     }
 
-    registerNewLine() {
-        this.editorRoot.addEventListener("keydown", (e) => {
-            const selection = this.getSelection();
-            if (e.key === "Enter") {
-                e.preventDefault();
+    addEventListener() {
+        this.editorRoot.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                console.info("enter");
+                const selection = this.getSelection();
+                event.preventDefault();
                 if (selection.anchorNode.nodeType === Node.TEXT_NODE) {
+                    console.info("textNodeEnter$");
                     const textNode = selection.anchorNode;
                     if (!(textNode instanceof Text)) {
                         console.error("textNode is not Text");
@@ -63,7 +65,7 @@ export class Editor {
                         newSpanNode.setText(
                             textNode.textContent.slice(cursorPosition)
                         );
-                        newSpanNode.diff = StateNodeDiff.INSERT;
+                        newSpanNode.diff = StateNodeDiff.INSERTED;
                         newParagraphStateNode.appendNode(newSpanNode);
                     }
 
@@ -84,93 +86,100 @@ export class Editor {
                         selection.removeAllRanges();
                         selection.addRange(range);
                     }
-
-                    return;
+                } else if (
+                    selection.anchorNode instanceof HTMLElement &&
+                    selection.anchorNode.nodeName === "P"
+                ) {
+                    console.info("paragraphEnter$");
+                    const paragraph = selection.anchorNode;
+                    const paragraphStateNode =
+                        this.sync.findStateNodeMatchingElement(paragraph);
+                    paragraphStateNode.addNextSiblings([
+                        new StateNode(StateNodeType.PARAGRAPH),
+                    ]);
+                    this.sync.syncEditor();
+                    const range = document.createRange();
+                    range.setStart(paragraph.nextElementSibling, 0);
+                    range.collapse(true);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
                 }
-
-                if (selection.anchorNode instanceof HTMLElement) {
-                    if (selection.anchorNode.nodeName === "P") {
-                        const paragraph = selection.anchorNode;
-                        const paragraphStateNode =
-                            this.sync.findStateNodeMatchingElement(paragraph);
-                        paragraphStateNode.addNextSiblings([
-                            new StateNode(StateNodeType.PARAGRAPH),
-                        ]);
-                        this.sync.syncEditor();
-                        const range = document.createRange();
-                        range.setStart(paragraph.nextElementSibling, 0);
-                        range.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
-                }
-            } else {
-                // TODO 엔터를 제외한 다른 키 눌림 - 분류가 필요하지만 일단은 텍스트 입력으로 간주
-                if (selection.anchorNode instanceof HTMLElement) {
-                    if (selection.anchorNode.nodeName === "P") {
-                        e.preventDefault();
-                        const paragraph = selection.anchorNode;
-                        const paragraphStateNode =
-                            this.sync.findStateNodeMatchingElement(paragraph);
-
-                        if (!paragraphStateNode.isEmpty()) {
-                            console.error(
-                                "cursor can not be on paragraph when paragraph is not empty"
-                            );
-                            return;
-                        }
-
-                        const newSpan = new StateNode(StateNodeType.SPAN);
-                        newSpan.setText(e.key);
-                        paragraphStateNode.appendNode(newSpan);
-                        this.sync.syncEditor();
-
-                        const span = paragraph.firstElementChild;
-                        const range = document.createRange();
-                        range.setStart(span, 1);
-                        range.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
-                }
-            }
-        });
-    }
-
-    registerBold() {
-        this.editorRoot.addEventListener("keydown", (e) => {
-            if ((e.ctrlKey || e.metaKey) && (e.key === "b" || e.key === "B")) {
-                e.preventDefault();
-                console.info("Ctrl + B가 비활성화되었습니다.");
+            } else if (event.key === "Backspace") {
                 const selection = this.getSelection();
+                if (selection.anchorNode.nodeType === Node.TEXT_NODE) {
+                    console.info("textNodeBackspace$");
+                    const textNode = selection.anchorNode;
+                    if (!(textNode instanceof Text)) {
+                        console.error("textNode is not Text");
+                        return;
+                    }
+                    if (textNode.textContent.length > 1) {
+                        requestAnimationFrame(() => {
+                            const span = textNode.parentElement;
+                            this.sync.syncSpanStateNode(span);
+                        });
+                    } else {
+                        const span = textNode.parentElement;
+                        const paragraph = span.parentElement;
+                        const spanStateNode =
+                            this.sync.findStateNodeMatchingElement(span);
+                        spanStateNode.delete();
+                        console.log(spanStateNode);
+                        this.sync.syncEditor();
+                        const range = document.createRange();
+                        range.setStart(paragraph, 0);
+                        range.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        console.log(paragraph.outerHTML)
+                    }
+                }
+            } else if (event.key.length === 1) {
+                console.info("typing");
+                const selection = this.getSelection();
+                if (selection.anchorNode.nodeType === Node.TEXT_NODE) {
+                    console.info("textNodeTyping$");
+                    const textNode = selection.anchorNode;
+                    if (!(textNode instanceof Text)) {
+                        console.error("textNode is not Text");
+                        return;
+                    }
+                    requestAnimationFrame(() => {
+                        const span = textNode.parentElement;
+                        this.sync.syncSpanStateNode(span);
+                    });
+                }
+                if (selection.anchorNode.nodeName === "P") {
+                    console.info("paragraphTyping$");
+                    event.preventDefault();
+                    const paragraph = selection.anchorNode;
+                    if (
+                        !(paragraph instanceof HTMLElement) ||
+                        paragraph.nodeName !== "P"
+                    ) {
+                        console.error("paragraph is not paragraph element");
+                        return;
+                    }
 
-                const sync = new Synchronizer(this.editorRoot, this.state);
+                    if (!DomElement.elementHasBreakOnly(paragraph)) {
+                        console.error("can not type in non-empty paragraph");
+                    }
 
-                const anchorState = sync.findStateNodeMatchingElement(
-                    selection.anchorNode.parentElement
-                );
-                const focusState = sync.findStateNodeMatchingElement(
-                    selection.focusNode.parentElement
-                );
+                    const paragraphStateNode =
+                        this.sync.findStateNodeMatchingElement(paragraph);
+                    const newSpanStateNode = new StateNode(StateNodeType.SPAN);
+                    paragraphStateNode.appendNode(newSpanStateNode);
+                    newSpanStateNode.setText(event.key);
+                    this.sync.syncEditor();
 
-                const states = StateNode.findStatesBetween(
-                    anchorState,
-                    focusState
-                );
-                // TODO 구현필요
-                // states
-                //     .filter((state) => state.type === "span")
-                //     .forEach((state) => {
-                //         if (!state.format) {
-                //             state.format = ["bold"];
-                //             state.diff = StateNodeDiff.MODIFY;
-                //         } else {
-                //             if (state.format.indexOf("bold") === -1) {
-                //                 state.format.push("bold");
-                //                 state.diff = StateNodeDiff.MODIFY;
-                //             }
-                //         }
-                //     });
+                    const span = paragraph.firstElementChild;
+                    const textNode = span.firstChild;
+                    const range = document.createRange();
+                    range.setStart(textNode, 1);
+                    range.collapse(true);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
             }
         });
     }
@@ -182,20 +191,5 @@ export class Editor {
             return;
         }
         return selection;
-    }
-
-    registerEventListener() {
-        CURSOR_ON_EVENTS.forEach((evt) => {
-            this.editorRoot.addEventListener(evt, (e) => {
-                const selection = this.getSelection();
-            });
-        });
-        // TYPE_EVENT.forEach((evt) => {
-        //     this.editorRoot.addEventListener(evt, (e) => {
-        //         const selection = this.getSelection();
-        //         const span = selection.anchorNode.parentElement;
-        //         this.sync.syncStateNodeText();
-        //     });
-        // });
     }
 }

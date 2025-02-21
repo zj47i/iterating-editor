@@ -1,19 +1,28 @@
 import { StateNode } from "../state-node/state-node";
 
 export class DomElement {
+    static remove(parent: HTMLElement, element: HTMLElement) {
+        parent.removeChild(element);
+    }
+
+    static createBr(): HTMLElement {
+        return document.createElement("br");
+    }
     static createParagraph(): HTMLElement {
-        const p = document.createElement("p");
-        return  p;
+        return document.createElement("p");
+    }
+
+    static createSpan(): HTMLElement {
+        return document.createElement("span");
     }
 
     static from(stateNode: StateNode): HTMLElement {
         if (stateNode.type === "span") {
-            return document.createElement("span");
-        }
-        if (stateNode.type === "paragraph") {
+            return DomElement.createSpan();
+        } else if (stateNode.type === "paragraph") {
             return DomElement.createParagraph();
         }
-        return document.createElement(stateNode.type);
+        console.error("unknown type: ", stateNode.type);
     }
 
     static elementHasBreakOnly(element: HTMLElement): boolean {
@@ -25,5 +34,9 @@ export class DomElement {
 
     static empty(element: HTMLElement) {
         element.innerHTML = "";
+    }
+
+    static isEmpty(element: HTMLElement) {
+        return element.innerHTML === "";
     }
 }
