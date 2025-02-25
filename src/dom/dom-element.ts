@@ -1,8 +1,16 @@
 import { StateNode } from "../state-node/state-node";
 
 export class DomElement {
-    static remove(parent: HTMLElement, element: HTMLElement) {
+    static removeFrom(parent: HTMLElement, element: HTMLElement) {
         parent.removeChild(element);
+    }
+    
+    static remove(element: HTMLElement) {
+        element.remove();
+    }
+
+    static children(element: HTMLElement): HTMLElement[] {
+        return Array.from(element.children) as HTMLElement[];
     }
 
     static createBr(): HTMLElement {
@@ -10,6 +18,8 @@ export class DomElement {
     }
     static createParagraph(): HTMLElement {
         return document.createElement("p");
+        // p.style.minHeight = "1em";
+        // return p;
     }
 
     static createSpan(): HTMLElement {
@@ -23,13 +33,6 @@ export class DomElement {
             return DomElement.createParagraph();
         }
         console.error("unknown type: ", stateNode.type);
-    }
-
-    static elementHasBreakOnly(element: HTMLElement): boolean {
-        return Array.from(element.childNodes).every(
-            (node) =>
-                node.nodeType === Node.ELEMENT_NODE && node.nodeName === "BR"
-        );
     }
 
     static empty(element: HTMLElement) {

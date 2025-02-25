@@ -1,7 +1,6 @@
 import { DomElement } from "../dom/dom-element";
 import { StateNode } from "../state-node/state-node";
 import diff from "fast-diff";
-import { StateNodeDiff } from "../state-node/state-node.enum";
 
 export class Synchronizer {
     constructor(private dom: HTMLElement, private state: StateNode) {}
@@ -21,49 +20,6 @@ export class Synchronizer {
         return true;
     }
 
-    syncEditor() {
-        const stack: [HTMLElement, StateNode][] = [[this.dom, this.state]];
-
-        while (stack.length > 0) {
-            const [element, state] = stack.pop();
-            const diff = state.diff;
-
-            this.syncElement(element, state);
-
-            // insert, modify
-            for (let i = 0; i < state.children.length; i++) {
-                const childState = state.children[i];
-                if (childState.diff === StateNodeDiff.DELETED) {
-                    continue;
-                }
-
-                if (childState.diff === StateNodeDiff.INSERTED) {
-                    if (
-                        element.nodeName === "P" &&
-                        element.children[0].tagName === "BR"
-                    ) {
-                        element.removeChild(element.children[0]);
-                    }
-                    element.insertBefore(
-                        DomElement.from(childState),
-                        element.children[i]
-                    );
-                }
-
-                const childElement = element.children[i];
-
-                if (!(childElement instanceof HTMLElement)) {
-                    console.error(
-                        "childElement is not HTMLElement: ",
-                        childElement
-                    );
-                    return;
-                }
-                stack.push([childElement, childState]);
-            }
-        }
-    }
-
     private syncElement(element: HTMLElement, state: StateNode) {
         if (state.type === "root") {
             return;
@@ -74,28 +30,61 @@ export class Synchronizer {
             return;
         }
 
-        if (state.isEmpty() && !DomElement.isEmpty(element)) {
+        if (state.isEmpty()) {
             DomElement.empty(element);
+            if (state.type === "paragraph") {
+                element.appendChild(DomElement.createBr());
+            }
+        }
+
+        if (!state.parent) {
+            DomElement.remove(element);
+            return;
         }
 
         if (state.type === "span") {
             element.textContent = state.getText();
         }
+    }
 
-        if (state.type === "paragraph" && state.diff === StateNodeDiff.INSERTED) {
-            element.appendChild(DomElement.createBr());
-        }
+    append(
+        parentElement: HTMLElement,
+        parentStateNode: StateNode,
+        stateNode: StateNode
+    ) {
+        parentStateNode.appendNode(stateNode);
+        const element = DomElement.from(stateNode);
+        parentElement.insertBefore(
+            element,
+            parentElement.children[parentStateNode.children.length - 1]
+        );
+        this.syncElement(element, stateNode);
+    }
 
-        if (state.type === "paragraph" && state.isEmpty()) {
-            const newParagraph = DomElement.createParagraph();
-            const parent = element.parentElement;
-            // replace paragraph with newParagraph
-            parent.insertBefore(newParagraph, element);
-            parent.removeChild(element);
-            newParagraph.appendChild(DomElement.createBr());
-        }
+    remove(element: HTMLElement, state: StateNode) {
+        const parentElement = element.parentElement;
+        const parentStateNode = state.parent;
 
-        state.diff = undefined;
+        state.delete();
+        this.syncElement(element, state);
+        this.syncElement(parentElement, parentStateNode);
+    }
+
+    addNextSiblings(
+        element: HTMLElement,
+        stateNode: StateNode,
+        siblings: StateNode[]
+    ) {
+        stateNode.addNextSiblings(siblings);
+        const parentElement = element.parentElement;
+        let target = element;
+        // add siblings at index, siblings is array, and add as stable
+        siblings.forEach((sibling) => {
+            const siblingElement = DomElement.from(sibling);
+            parentElement.insertBefore(siblingElement, target.nextSibling);
+            target = siblingElement;
+            this.syncElement(siblingElement, sibling);
+        });
     }
 
     findElementIndexPathToRoot(element: HTMLElement): number[] {

@@ -1,4 +1,4 @@
-import { StateNodeDiff, StateNodeType } from "./state-node.enum";
+import { StateNodeType } from "./state-node.enum";
 
 export class StateNode {
     public type: StateNodeType;
@@ -6,19 +6,17 @@ export class StateNode {
     public children: StateNode[];
     private text?: string | undefined;
     public format?: string[];
-    public diff: StateNodeDiff;
 
     constructor(type: StateNodeType) {
         this.type = type;
         this.children = [];
-        if (type !== "root") {
-            this.diff = StateNodeDiff.INSERTED;
+        if (type === "root") {
+            return;
         }
     }
 
     empty() {
         this.children.forEach((child) => child.delete());
-        this.diff = StateNodeDiff.MODIFIED;
     }
 
     delete() {
@@ -30,7 +28,6 @@ export class StateNode {
         const index = parent.children.indexOf(this);
         parent.children.splice(index, 1);
         this.parent = undefined;
-        this.diff = StateNodeDiff.DELETED;
     }
 
     appendNode(node: StateNode) {
@@ -68,7 +65,6 @@ export class StateNode {
             return;
         }
         this.text = text;
-        this.diff = StateNodeDiff.MODIFIED;
     }
 
     public spliceText(text: string, index = 0) {
@@ -80,7 +76,6 @@ export class StateNode {
             this.text = "";
         }
         this.text = this.text.slice(0, index) + text + this.text.slice(index);
-        this.diff = StateNodeDiff.MODIFIED;
     }
 
     static createRootState(): StateNode {

@@ -3,9 +3,3 @@ export enum StateNodeType {
     PARAGRAPH = "paragraph",
     SPAN = "span",
 }
-
-export enum StateNodeDiff {
-    INSERTED = "inserted",
-    DELETED = "deleted",
-    MODIFIED = "modified",
-}
