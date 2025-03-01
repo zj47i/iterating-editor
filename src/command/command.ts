@@ -2,12 +2,13 @@ import { StateNode } from "../state-node/state-node";
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandHandlerBackspace } from "./command.handler.backspace";
 import { CommandHandlerEnter } from "./command.handler.enter";
+import { CommandHandlerInput } from "./command.handler.input";
 import { CommandHandler } from "./command.handler.interface";
-import { CommandHandlerType } from "./command.handler.type";
 import { CommandKeyboardEvent } from "./command.keyboard-event.enum";
 
 export class Command {
     private keyHandlers: { [key: string]: CommandHandler } = {};
+    private inputHandlers: { [key: string]: CommandHandler } = {};
     constructor(
         private editorDom: HTMLElement,
         private editorStateNode: StateNode,
@@ -23,15 +24,14 @@ export class Command {
             this.editorStateNode,
             this.sync
         );
-        this.keyHandlers["Type"] = new CommandHandlerType(
+        this.inputHandlers["Input"] = new CommandHandlerInput(
             this.editorDom,
             this.editorStateNode,
             this.sync
         );
     }
 
-    public keydown(event: KeyboardEvent) {
-        console.log(event);
+    keydown(event: KeyboardEvent) {
         if (event.key === CommandKeyboardEvent.ENTER) {
             console.info(CommandKeyboardEvent.ENTER);
             event.preventDefault();
@@ -42,10 +42,9 @@ export class Command {
             console.info(CommandKeyboardEvent.BACKSPACE);
             this.keyHandlers[CommandKeyboardEvent.BACKSPACE].handler(event);
         }
+    }
 
-        if (event.key.length === 1) {
-            console.info(CommandKeyboardEvent.TYPE);
-            this.keyHandlers[CommandKeyboardEvent.TYPE].handler(event);
-        }
+    input(event: InputEvent) {
+        this.inputHandlers["Input"].handler(event);
     }
 }

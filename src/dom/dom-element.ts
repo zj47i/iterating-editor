@@ -18,12 +18,22 @@ export class DomElement {
     }
     static createParagraph(): HTMLElement {
         return document.createElement("p");
-        // p.style.minHeight = "1em";
-        // return p;
     }
 
     static createSpan(): HTMLElement {
         return document.createElement("span");
+    }
+
+    static createTextNode(): Text {
+        return document.createTextNode("");
+    }
+
+    static merge(former: HTMLElement, latter: HTMLElement) {
+        const children = Array.from(latter.children);
+        children.forEach((child) => {
+            former.appendChild(child);
+        });
+        latter.remove();
     }
 
     static from(stateNode: StateNode): HTMLElement {

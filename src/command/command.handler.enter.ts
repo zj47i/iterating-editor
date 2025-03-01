@@ -33,7 +33,7 @@ export class CommandHandlerEnter implements CommandHandler {
         const paragraphStateNode =
             this.sync.findStateNodeMatchingElement(paragraph);
         const newParagraphStateNode = new StateNode(StateNodeType.PARAGRAPH);
-        this.sync.addNextSiblings(paragraph, paragraphStateNode, [newParagraphStateNode]);
+        this.sync.addNextSiblings(paragraphStateNode, [newParagraphStateNode]);
         const range = document.createRange();
         range.setStart(paragraph.nextElementSibling, 0);
         range.collapse(true);
@@ -44,12 +44,18 @@ export class CommandHandlerEnter implements CommandHandler {
     private textNodeEnter$(selection: Selection, textNode: Text) {
         console.info("textNodeEnter$");
         const span = textNode.parentElement;
-        const p = span.parentElement;
+        const paragraph = span.parentElement;
 
-        const paragraphStateNode = this.sync.findStateNodeMatchingElement(p);
+        const paragraphStateNode =
+            this.sync.findStateNodeMatchingElement(paragraph);
 
         const newParagraphStateNode = new StateNode(StateNodeType.PARAGRAPH);
-        this.sync.addNextSiblings(p, paragraphStateNode, [newParagraphStateNode]);
+        this.sync.addNextSiblings(paragraphStateNode, [newParagraphStateNode]);
+
+        if (!(paragraph.nextElementSibling instanceof HTMLElement)) {
+            console.error("nextSibling is not HTMLElement");
+            return;
+        }
 
         const textLength = textNode.textContent.length;
         const cursorPosition = selection.anchorOffset;
@@ -62,22 +68,30 @@ export class CommandHandlerEnter implements CommandHandler {
                 return;
             }
 
-            spanStateNode.modifyText(span.textContent.slice(0, cursorPosition));
+            const former = span.textContent.slice(0, cursorPosition);
+            const latter = span.textContent.slice(cursorPosition);
 
-            const newSpanNode = new StateNode(StateNodeType.SPAN);
-            newSpanNode.setText(textNode.textContent.slice(cursorPosition));
-            this.sync.append(p, paragraphStateNode, newSpanNode);
+            this.sync.setText(
+                spanStateNode,
+                former
+            );
+            const newSpanStateNode = new StateNode(StateNodeType.SPAN);
+            this.sync.appendStateNode(newParagraphStateNode, newSpanStateNode);
+            this.sync.setText(
+                newSpanStateNode,
+                latter
+            );
         }
 
         if (cursorPosition === textLength) {
-            const newP = p.nextElementSibling;
+            const newP = paragraph.nextElementSibling;
             const range = document.createRange();
             range.setStart(newP, 0);
             range.collapse(true);
             selection.removeAllRanges();
             selection.addRange(range);
         } else {
-            const newSpan = p.nextElementSibling.firstElementChild;
+            const newSpan = paragraph.nextElementSibling.firstElementChild;
             const range = document.createRange();
             range.setStart(newSpan, 0);
             range.collapse(true);

@@ -20,6 +20,29 @@ export class Synchronizer {
         return true;
     }
 
+    setText(spanStateNode: StateNode, text: string) {
+        spanStateNode.setText(text);
+        const span = this.findElementMatchingStateNode(spanStateNode);
+        span.textContent = text;
+    }
+
+    mergeParagraphs(
+        previousParagraphStateNode: StateNode,
+        paragraphStateNode: StateNode,
+        paragraph: HTMLElement
+    ) {
+        const previousParagraph = paragraph.previousElementSibling;
+        if (!previousParagraph) {
+            console.error("previousParagraph is undefined");
+        }
+        if (!(previousParagraph instanceof HTMLElement)) {
+            console.error("previousParagraph is not HTMLElement");
+            return;
+        }
+        previousParagraphStateNode.merge(paragraphStateNode);
+        DomElement.merge(previousParagraph, paragraph);
+    }
+
     private syncElement(element: HTMLElement, state: StateNode) {
         if (state.type === "root") {
             return;
@@ -47,38 +70,54 @@ export class Synchronizer {
         }
     }
 
-    append(
-        parentElement: HTMLElement,
-        parentStateNode: StateNode,
-        stateNode: StateNode
-    ) {
-        parentStateNode.appendNode(stateNode);
-        const element = DomElement.from(stateNode);
-        parentElement.insertBefore(
-            element,
-            parentElement.children[parentStateNode.children.length - 1]
+    private syncStateNode(state: StateNode, element: HTMLElement) {
+        if (element.nodeName === "SPAN") {
+            state.setText(element.textContent);
+        }
+    }
+
+    appendStateNode(stateNode: StateNode, childStateNode: StateNode) {
+        const element = this.findElementMatchingStateNode(stateNode);
+        if (stateNode.type === "paragraph" && stateNode.isEmpty()) {
+            element.innerHTML = "";
+        }
+        stateNode.appendNode(childStateNode);
+        const childElement = DomElement.from(childStateNode);
+        element.insertBefore(
+            childElement,
+            element.children[stateNode.children.length - 1]
         );
-        this.syncElement(element, stateNode);
+        this.syncElement(childElement, childStateNode);
+    }
+
+    appendElement(
+        parentStateNode: StateNode,
+        parentElement: HTMLElement,
+        childElement: HTMLElement
+    ) {
+        if (parentStateNode.type === "paragraph" && parentStateNode.isEmpty()) {
+            parentElement.innerHTML = "";
+        }
+        parentElement.appendChild(childElement);
+        const childStateNode = StateNode.from(childElement);
+        parentStateNode.appendNode(childStateNode);
+        this.syncStateNode(childStateNode, childElement);
     }
 
     remove(element: HTMLElement, state: StateNode) {
         const parentElement = element.parentElement;
         const parentStateNode = state.parent;
 
-        state.delete();
+        state.remove();
         this.syncElement(element, state);
         this.syncElement(parentElement, parentStateNode);
     }
 
-    addNextSiblings(
-        element: HTMLElement,
-        stateNode: StateNode,
-        siblings: StateNode[]
-    ) {
+    addNextSiblings(stateNode: StateNode, siblings: StateNode[]) {
         stateNode.addNextSiblings(siblings);
+        const element = this.findElementMatchingStateNode(stateNode);
         const parentElement = element.parentElement;
         let target = element;
-        // add siblings at index, siblings is array, and add as stable
         siblings.forEach((sibling) => {
             const siblingElement = DomElement.from(sibling);
             parentElement.insertBefore(siblingElement, target.nextSibling);
@@ -104,13 +143,47 @@ export class Synchronizer {
         return path;
     }
 
+    findStateNodeIndexPathToRoot(stateNode: StateNode): number[] {
+        const path: number[] = [];
+        while (stateNode.type !== "root") {
+            if (!stateNode.parent) {
+                console.error("stateNode.parent is undefined");
+                return [];
+            }
+            const index = stateNode.parent.children.indexOf(stateNode);
+            path.push(index);
+            stateNode = stateNode.parent;
+        }
+        return path;
+    }
+
     findStateNodeMatchingElement(element: HTMLElement): StateNode {
         const path = this.findElementIndexPathToRoot(element);
+        if (path.length === 0) {
+            return this.state;
+        }
         let state = this.state;
         for (let i = path.length - 1; i >= 0; i--) {
             state = state.children[path[i]];
         }
         return state;
+    }
+
+    findElementMatchingStateNode(stateNode: StateNode): HTMLElement {
+        const path = this.findStateNodeIndexPathToRoot(stateNode);
+        if (path.length === 0) {
+            return this.dom;
+        }
+        let element = this.dom;
+        for (let i = path.length - 1; i >= 0; i--) {
+            const e = element.children[path[i]];
+            if (!(e instanceof HTMLElement)) {
+                console.error("element is not HTMLElement");
+                return null;
+            }
+            element = e;
+        }
+        return element;
     }
 
     syncSpanStateNode(span: HTMLElement) {

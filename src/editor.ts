@@ -12,37 +12,29 @@ export class Editor {
         this.editorRoot.contentEditable = "true";
         this.state = StateNode.createRootState();
         this.sync = new Synchronizer(editorRoot, this.state);
+        this.updateSelection();
 
-        const paragraph = new StateNode(StateNodeType.PARAGRAPH);
-        this.sync.append(this.editorRoot, this.state, paragraph);
+        const paragraphStateNode = new StateNode(StateNodeType.PARAGRAPH);
+        this.sync.appendStateNode(this.state, paragraphStateNode);
 
         this.command = new Command(this.editorRoot, this.state, this.sync);
         this.addEventListener();
-        // MutationObserver 인스턴스 생성
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === "childList") {
-                    // 요소가 새로 추가됨
-                    mutation.addedNodes.forEach((node) => {
-                        console.log("추가된 요소:", node);
-                    });
+    }
 
-                    // 요소가 제거됨
-                    mutation.removedNodes.forEach((node) => {
-                        console.log("제거된 요소:", node);
-                    });
-                }
-            });
-        });
-
-        // body와 그 하위 요소들의 childList 변경을 감시
-        observer.observe(this.editorRoot, { childList: true, subtree: true });
+    updateSelection() {
+        setInterval(() => {
+            const selection = getSelection();
+            const s = document.getElementById("@selection");
+            s.innerHTML = `anchorNode: ${selection.anchorNode.nodeName}<br>
+                anchorOffset: ${selection.anchorOffset}<br>
+                focusNode: ${selection.focusNode.nodeName}<br>
+                focusOffset: ${selection.focusOffset}`;
+        }, 200);
     }
 
     addEventListener() {
         this.editorRoot.addEventListener("keydown", (event) => {
-            console.log("keydown");
-            console.log(getSelection());
+            console.log("keydown event:", event);
             if (!(event instanceof KeyboardEvent)) {
                 console.error("event is not KeyboardEvent");
                 return;
@@ -50,14 +42,13 @@ export class Editor {
             this.command.keydown(event);
         });
 
-        this.editorRoot.addEventListener("click", (event) => {
-            console.log("click");
-            const selection = getSelection();
-            const s = document.getElementById("@selection");
-            s.innerHTML = `anchorNode: ${selection.anchorNode.nodeName}<br>
-                anchorOffset: ${selection.anchorOffset}<br>
-                focusNode: ${selection.focusNode.nodeName}<br>
-                focusOffset: ${selection.focusOffset}`;
+        this.editorRoot.addEventListener("input", (event) => {
+            console.log("input event:", event);
+            if (!(event instanceof InputEvent)) {
+                console.error("event is not InputEvent");
+                return;
+            }
+            this.command.input(event as any);
         });
     }
 }

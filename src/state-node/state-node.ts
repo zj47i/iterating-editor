@@ -15,11 +15,16 @@ export class StateNode {
         }
     }
 
-    empty() {
-        this.children.forEach((child) => child.delete());
+    merge(other: StateNode) {
+        this.children.push(...other.children);
+        other.remove()
     }
 
-    delete() {
+    empty() {
+        this.children.forEach((child) => child.remove());
+    }
+
+    remove() {
         const parent = this.parent;
         if (!parent) {
             console.error("no parent");
@@ -52,14 +57,6 @@ export class StateNode {
     }
 
     public setText(text: string) {
-        if (this.type !== "span") {
-            console.error("only span node can have text");
-            return;
-        }
-        this.text = text;
-    }
-
-    public modifyText(text: string) {
         if (this.type !== "span") {
             console.error("only span node can have text");
             return;
@@ -154,6 +151,15 @@ export class StateNode {
         }
 
         return result;
+    }
+
+    static from(element: HTMLElement) {
+        if (element.nodeName === "P") {
+            return new StateNode(StateNodeType.PARAGRAPH);
+        }
+        if (element.nodeName === "SPAN") {
+            return new StateNode(StateNodeType.SPAN);
+        }
     }
 
     static traversalBeforePath(p: StateNode[]): StateNode[] {
@@ -275,6 +281,30 @@ export class StateNode {
         );
 
         return result;
+    }
+
+    getPreviousSibling() {
+        if (!this.parent) {
+            console.error("no parent");
+            return;
+        }
+        const index = this.parent.children.indexOf(this);
+        if (index === 0) {
+            return;
+        }
+        return this.parent.children[index - 1];
+    }
+
+    getNextSibling() {
+        if (!this.parent) {
+            console.error("no parent");
+            return;
+        }
+        const index = this.parent.children.indexOf(this);
+        if (index === this.parent.children.length - 1) {
+            return;
+        }
+        return this.parent.children[index + 1];
     }
 
     public addNextSiblings(nodes: StateNode[]) {
