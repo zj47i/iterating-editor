@@ -15,9 +15,23 @@ export class StateNode {
         }
     }
 
+    bold() {
+        if (this.type !== "span") {
+            console.error("only span node can be bold");
+            return;
+        }
+        if (!this.format) {
+            this.format = [];
+        }
+        if (this.format.includes("bold")) {
+            return;
+        }
+        this.format.push("bold");
+    }
+
     merge(other: StateNode) {
         this.children.push(...other.children);
-        other.remove()
+        other.remove();
     }
 
     empty() {

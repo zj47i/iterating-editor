@@ -12,24 +12,12 @@ export class Editor {
         this.editorRoot.contentEditable = "true";
         this.state = StateNode.createRootState();
         this.sync = new Synchronizer(editorRoot, this.state);
-        this.updateSelection();
 
         const paragraphStateNode = new StateNode(StateNodeType.PARAGRAPH);
         this.sync.appendStateNode(this.state, paragraphStateNode);
 
         this.command = new Command(this.editorRoot, this.state, this.sync);
         this.addEventListener();
-    }
-
-    updateSelection() {
-        setInterval(() => {
-            const selection = getSelection();
-            const s = document.getElementById("@selection");
-            s.innerHTML = `anchorNode: ${selection.anchorNode.nodeName}<br>
-                anchorOffset: ${selection.anchorOffset}<br>
-                focusNode: ${selection.focusNode.nodeName}<br>
-                focusOffset: ${selection.focusOffset}`;
-        }, 200);
     }
 
     addEventListener() {
@@ -49,6 +37,17 @@ export class Editor {
                 return;
             }
             this.command.input(event as any);
+        });
+
+        this.editorRoot.addEventListener("click", (event) => {
+            document.addEventListener("selectionchange", () => {
+                const selection = document.getSelection();
+                const s = document.getElementById("@selection");
+                s.innerHTML = `anchorNode: ${selection.anchorNode.nodeName}<br>
+                anchorOffset: ${selection.anchorOffset}<br>
+                focusNode: ${selection.focusNode.nodeName}<br>
+                focusOffset: ${selection.focusOffset}<br>`;
+            });
         });
     }
 }

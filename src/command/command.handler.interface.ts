@@ -1,4 +1,4 @@
 export interface CommandHandler {
     determine(): any;
-    handler(event: Event): void;
+    handle(event: Event): void;
 }

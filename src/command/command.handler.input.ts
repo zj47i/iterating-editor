@@ -12,7 +12,7 @@ export class CommandHandlerInput implements CommandHandler {
 
     determine() {}
 
-    handler(event: KeyboardEvent): void {
+    handle(event: KeyboardEvent): void {
         const selection = getSelection();
         const element = selection.anchorNode;
         if (element.nodeType === Node.TEXT_NODE) {
@@ -23,8 +23,13 @@ export class CommandHandlerInput implements CommandHandler {
             const textNode = element;
             const parent = textNode.parentElement;
             if (parent.nodeName === "P") {
-                console.info("paragraph");
                 this.paragraphInput$(textNode, parent, selection);
+                return;
+            }
+
+            if (parent.nodeName === "SPAN") {
+                this.textNodeInput$(textNode, selection);
+                return;
             }
         }
     }
@@ -45,5 +50,13 @@ export class CommandHandlerInput implements CommandHandler {
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
+    }
+
+    private textNodeInput$(textNode: Text, selection: Selection) {
+        console.info("textNodeInput$");
+        const span = textNode.parentElement;
+
+        const spanStateNode = this.sync.findStateNodeMatchingElement(span);
+        this.sync.setSpanStateNodeText(spanStateNode, textNode.textContent);
     }
 }

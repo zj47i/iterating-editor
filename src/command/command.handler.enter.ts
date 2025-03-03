@@ -12,7 +12,8 @@ export class CommandHandlerEnter implements CommandHandler {
 
     determine() {}
 
-    handler(): void {
+    handle(event: KeyboardEvent): void {
+        event.preventDefault();
         const selection = getSelection();
         if (selection.anchorNode.nodeType === Node.TEXT_NODE) {
             if (!(selection.anchorNode instanceof Text)) {
@@ -71,16 +72,10 @@ export class CommandHandlerEnter implements CommandHandler {
             const former = span.textContent.slice(0, cursorPosition);
             const latter = span.textContent.slice(cursorPosition);
 
-            this.sync.setText(
-                spanStateNode,
-                former
-            );
+            this.sync.setText(spanStateNode, former);
             const newSpanStateNode = new StateNode(StateNodeType.SPAN);
             this.sync.appendStateNode(newParagraphStateNode, newSpanStateNode);
-            this.sync.setText(
-                newSpanStateNode,
-                latter
-            );
+            this.sync.setText(newSpanStateNode, latter);
         }
 
         if (cursorPosition === textLength) {

@@ -11,7 +11,7 @@ export class CommandHandlerBackspace implements CommandHandler {
 
     determine() {}
 
-    handler(event: KeyboardEvent): void {
+    handle(event: KeyboardEvent): void {
         const selection = getSelection();
         if (
             selection.anchorNode.nodeType === Node.TEXT_NODE &&

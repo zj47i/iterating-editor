@@ -3,6 +3,12 @@ import { StateNode } from "../state-node/state-node";
 import diff from "fast-diff";
 
 export class Synchronizer {
+    bold(span: StateNode) {
+        span.bold();
+        const element = this.findElementMatchingStateNode(span);
+        this.syncElement(element, span);
+    }
+
     constructor(private dom: HTMLElement, private state: StateNode) {}
 
     private matchType(element: HTMLElement, state: StateNode) {
@@ -24,6 +30,10 @@ export class Synchronizer {
         spanStateNode.setText(text);
         const span = this.findElementMatchingStateNode(spanStateNode);
         span.textContent = text;
+    }
+
+    setSpanStateNodeText(spanStateNode: StateNode, textContent: string) {
+        spanStateNode.setText(textContent);
     }
 
     mergeParagraphs(
@@ -67,6 +77,16 @@ export class Synchronizer {
 
         if (state.type === "span") {
             element.textContent = state.getText();
+            if (state.format) {
+                state.format.forEach((format) => {
+                    if (format === "bold") {
+                        element.style.fontWeight = "bold";
+                    }
+                    if (format === "italic") {
+                        element.style.fontStyle = "italic";
+                    }
+                });
+            }
         }
     }
 
