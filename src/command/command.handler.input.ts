@@ -1,5 +1,5 @@
 import { DomElement } from "../dom/dom-element";
-import { StateNode } from "../state-node/state-node";
+import { StateNode } from "../vdom/state-node";
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandHandler } from "./command.handler.interface";
 

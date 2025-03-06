@@ -1,5 +1,5 @@
-import { StateNode } from "../state-node/state-node";
-import { StateNodeType } from "../state-node/state-node.enum";
+import { StateNode } from "../vdom/state-node";
+import { StateNodeType } from "../vdom/state-node.enum";
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandHandler } from "./command.handler.interface";
 

@@ -1,27 +1,27 @@
 import { Command } from "./command/command";
-import { StateNode } from "./state-node/state-node";
-import { StateNodeType } from "./state-node/state-node.enum";
+import { StateNode } from "./vdom/state-node";
+import { StateNodeType } from "./vdom/state-node.enum";
 import { Synchronizer } from "./syncronizer/syncronizer";
 
 export class Editor {
-    private state: StateNode;
+    private vdom: StateNode;
     private sync: Synchronizer;
     private command: Command;
 
-    constructor(private editorRoot: HTMLDivElement) {
-        this.editorRoot.contentEditable = "true";
-        this.state = StateNode.createRootState();
-        this.sync = new Synchronizer(editorRoot, this.state);
+    constructor(private dom: HTMLDivElement) {
+        this.dom.contentEditable = "true";
+        this.vdom = StateNode.createRootState();
+        this.sync = new Synchronizer(dom, this.vdom);
 
         const paragraphStateNode = new StateNode(StateNodeType.PARAGRAPH);
-        this.sync.appendStateNode(this.state, paragraphStateNode);
+        this.sync.appendStateNode(this.vdom, paragraphStateNode);
 
-        this.command = new Command(this.editorRoot, this.state, this.sync);
+        this.command = new Command(this.dom, this.vdom, this.sync);
         this.addEventListener();
     }
 
     addEventListener() {
-        this.editorRoot.addEventListener("keydown", (event) => {
+        this.dom.addEventListener("keydown", (event) => {
             console.log("keydown event:", event);
             if (!(event instanceof KeyboardEvent)) {
                 console.error("event is not KeyboardEvent");
@@ -30,7 +30,7 @@ export class Editor {
             this.command.keydown(event);
         });
 
-        this.editorRoot.addEventListener("input", (event) => {
+        this.dom.addEventListener("input", (event) => {
             console.log("input event:", event);
             if (!(event instanceof InputEvent)) {
                 console.error("event is not InputEvent");
@@ -39,7 +39,7 @@ export class Editor {
             this.command.input(event as any);
         });
 
-        this.editorRoot.addEventListener("click", (event) => {
+        this.dom.addEventListener("click", (event) => {
             document.addEventListener("selectionchange", () => {
                 const selection = document.getSelection();
                 const s = document.getElementById("@selection");

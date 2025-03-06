@@ -1,10 +1,10 @@
-import { StateNode } from "../state-node/state-node";
+import { StateNode } from "../vdom/state-node";
 
 export class DomElement {
     static removeFrom(parent: HTMLElement, element: HTMLElement) {
         parent.removeChild(element);
     }
-    
+
     static remove(element: HTMLElement) {
         element.remove();
     }

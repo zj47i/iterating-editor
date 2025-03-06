@@ -1,5 +1,11 @@
 import { Editor } from "./editor";
 import "./style.css";
+import "./debug";
 
 const editorDiv = document.getElementById("@editor") as HTMLDivElement;
-const editor = new Editor(editorDiv);
+if (!(editorDiv instanceof HTMLDivElement)) {
+    console.error("editor element not found");
+    throw new Error("editor element not found");
+}
+
+new Editor(editorDiv);

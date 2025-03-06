@@ -28,7 +28,7 @@
 //     ├── span19
 //     └── span20
 
-import { StateNode } from "../state-node/state-node";
+import { StateNode } from "../vdom/state-node";
 import { StateNodeType } from "./state-node.enum";
 
 export function mockStateTree() {

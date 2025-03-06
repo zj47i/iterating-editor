@@ -1,5 +1,5 @@
 import { DomElement } from "../dom/dom-element";
-import { StateNode } from "../state-node/state-node";
+import { StateNode } from "../vdom/state-node";
 import diff from "fast-diff";
 
 export class Synchronizer {
@@ -9,7 +9,7 @@ export class Synchronizer {
         this.syncElement(element, span);
     }
 
-    constructor(private dom: HTMLElement, private state: StateNode) {}
+    constructor(private dom: HTMLElement, private vdom: StateNode) {}
 
     private matchType(element: HTMLElement, state: StateNode) {
         if (element.id === "@editor" && state.type !== "root") {
@@ -180,9 +180,9 @@ export class Synchronizer {
     findStateNodeMatchingElement(element: HTMLElement): StateNode {
         const path = this.findElementIndexPathToRoot(element);
         if (path.length === 0) {
-            return this.state;
+            return this.vdom;
         }
-        let state = this.state;
+        let state = this.vdom;
         for (let i = path.length - 1; i >= 0; i--) {
             state = state.children[path[i]];
         }

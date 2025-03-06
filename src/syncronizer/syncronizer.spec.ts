@@ -1,7 +1,6 @@
 // hello-world.test.js
 import "@testing-library/jest-dom";
-import { Synchronizer } from "./syncronizer";
-import { StateNode } from "../state-node/state-node";
+import { StateNode } from "../vdom/state-node";
 
 test("syncEditor", () => {
     // 테스트할 DOM 작성

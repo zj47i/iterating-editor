@@ -1,4 +1,4 @@
-import { StateNode } from "../state-node/state-node";
+import { StateNode } from "../vdom/state-node";
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandHandlerBackspace } from "./command.handler.backspace";
 import { CommandHandlerEnter } from "./command.handler.enter";
