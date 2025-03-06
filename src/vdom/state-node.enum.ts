@@ -3,3 +3,9 @@ export enum StateNodeType {
     PARAGRAPH = "paragraph",
     SPAN = "span",
 }
+
+export enum StateNodeTextFormat {
+    BOLD = "bold",
+    ITALIC = "italic",
+    UNDERLINE = "underline",
+}

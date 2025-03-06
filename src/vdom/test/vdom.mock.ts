@@ -28,10 +28,10 @@
 //     ├── span19
 //     └── span20
 
-import { StateNode } from "../vdom/state-node";
-import { StateNodeType } from "./state-node.enum";
+import { StateNode } from "../state-node";
+import { StateNodeType } from "../state-node.enum";
 
-export function mockStateTree() {
+export function mockVdom() {
     const root = new StateNode(StateNodeType.ROOT);
 
     // paragraph1 구성

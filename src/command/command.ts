@@ -13,28 +13,28 @@ export class Command {
     private inputHandler: CommandHandler;
     private shortcutHandler: CommandHandler;
     constructor(
-        private editorDom: HTMLElement,
-        private editorStateNode: StateNode,
+        private dom: HTMLElement,
+        private vdom: StateNode,
         private sync: Synchronizer
     ) {
         this.enterHandler = new CommandHandlerEnter(
-            this.editorDom,
-            this.editorStateNode,
+            this.dom,
+            this.vdom,
             this.sync
         );
         this.backspaceHandler = new CommandHandlerBackspace(
-            this.editorDom,
-            this.editorStateNode,
+            this.dom,
+            this.vdom,
             this.sync
         );
         this.inputHandler = new CommandHandlerInput(
-            this.editorDom,
-            this.editorStateNode,
+            this.dom,
+            this.vdom,
             this.sync
         );
         this.shortcutHandler = new ShortcutHandler(
-            this.editorDom,
-            this.editorStateNode,
+            this.dom,
+            this.vdom,
             this.sync
         );
     }

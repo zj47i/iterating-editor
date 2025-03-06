@@ -1,21 +1,21 @@
-import { StateNodeType } from "./state-node.enum";
+import { StateNodeTextFormat, StateNodeType } from "./state-node.enum";
 
 export class StateNode {
     public type: StateNodeType;
-    public parent: StateNode | undefined;
+    public parent: StateNode | null;
     public children: StateNode[];
-    private text?: string | undefined;
+    private text?: string | null;
     public format?: string[];
 
     constructor(type: StateNodeType) {
         this.type = type;
+        this.parent = null;
         this.children = [];
-        if (type === "root") {
-            return;
-        }
+        this.text = null
+        this.format = [];
     }
 
-    bold() {
+    setFormat(format: StateNodeTextFormat) {
         if (this.type !== "span") {
             console.error("only span node can be bold");
             return;
@@ -23,22 +23,27 @@ export class StateNode {
         if (!this.format) {
             this.format = [];
         }
-        if (this.format.includes("bold")) {
+        if (this.format.includes(format)) {
             return;
         }
-        this.format.push("bold");
+        this.format.push(format);
     }
 
-    merge(other: StateNode) {
-        this.children.push(...other.children);
+    public absorb(other: StateNode) {
+        for (const child of other.children) {
+            child.parent = null;
+            this.appendNode(child);
+        }
         other.remove();
     }
 
-    empty() {
-        this.children.forEach((child) => child.remove());
+    public empty() {
+        while (this.children.length > 0) {
+            this.children.shift().remove();
+        }
     }
 
-    remove() {
+    public remove() {
         const parent = this.parent;
         if (!parent) {
             console.error("no parent");
@@ -46,7 +51,7 @@ export class StateNode {
         }
         const index = parent.children.indexOf(this);
         parent.children.splice(index, 1);
-        this.parent = undefined;
+        this.parent = null;
     }
 
     appendNode(node: StateNode) {
@@ -83,7 +88,7 @@ export class StateNode {
             console.error("only span node can have text");
             return;
         }
-        if (this.text === undefined) {
+        if (this.text === null) {
             this.text = "";
         }
         this.text = this.text.slice(0, index) + text + this.text.slice(index);
@@ -155,7 +160,7 @@ export class StateNode {
             const current = stack.pop();
             const index = path.indexOf(current);
             if (index === -1) {
-                result.push(...current.preOrderTraversal());
+                result.push(...StateNode.preOrderTraversal(current));
                 continue;
             }
             if (index === 0) {
@@ -176,32 +181,28 @@ export class StateNode {
         }
     }
 
-    static traversalBeforePath(p: StateNode[]): StateNode[] {
+    public static traversalBeforePath(p: StateNode[]): StateNode[] {
         const path = Array.from(p);
-
         const states = [];
-
         const current = path.pop();
         states.push(current);
-
         while (path.length > 0) {
             const current = path.pop();
             const parent = current.parent;
             const index = parent.children.indexOf(current);
             if (index >= 1) {
                 for (let i = 0; i < index; i++) {
-                    states.push(...parent.children[i].preOrderTraversal());
+                    states.push(...StateNode.preOrderTraversal(parent.children[i]));
                 }
             }
-
             states.push(current);
         }
 
         return states;
     }
 
-    public preOrderTraversal(): StateNode[] {
-        const stack: StateNode[] = [this];
+    public static preOrderTraversal(from: StateNode): StateNode[] {
+        const stack: StateNode[] = [from];
         const result: StateNode[] = [];
 
         while (stack.length > 0) {
@@ -231,7 +232,9 @@ export class StateNode {
         return result;
     }
 
-    static determineLeftRight(
+    // ELEMENTS에 대한 순서를 알 수 있어서 이 함수가 필요없음.
+    // 이후를 위해 남겨두기
+    public static determineLeftRight(
         node1: StateNode,
         node2: StateNode
     ): [StateNode, StateNode] {
@@ -261,12 +264,10 @@ export class StateNode {
     }
 
     public static findStatesBetween(
-        node1: StateNode,
-        node2: StateNode
+        left: StateNode,
+        right: StateNode
     ): StateNode[] {
         const result: StateNode[] = [];
-
-        const [left, right] = StateNode.determineLeftRight(node1, node2);
 
         const ancestor = StateNode.findLowestCommonAncestor(left, right);
         const path1 = left.findPathToAncestorNode(ancestor);
@@ -288,7 +289,7 @@ export class StateNode {
             ...StateNode.traversalAfterPath(path1.slice(0, path1.length - 1))
         );
         for (let i = index1 + 1; i < index2; i++) {
-            result.push(...ancestor.children[i].preOrderTraversal());
+            result.push(...StateNode.preOrderTraversal(ancestor.children[i]));
         }
         result.push(
             ...StateNode.traversalBeforePath(path2.slice(0, path2.length - 1))
@@ -297,7 +298,7 @@ export class StateNode {
         return result;
     }
 
-    getPreviousSibling() {
+    public getPreviousSibling() {
         if (!this.parent) {
             console.error("no parent");
             return;
@@ -309,7 +310,7 @@ export class StateNode {
         return this.parent.children[index - 1];
     }
 
-    getNextSibling() {
+    public getNextSibling() {
         if (!this.parent) {
             console.error("no parent");
             return;

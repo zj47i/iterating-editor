@@ -1,10 +1,11 @@
 import { DomElement } from "../dom/dom-element";
 import { StateNode } from "../vdom/state-node";
 import diff from "fast-diff";
+import { StateNodeTextFormat } from "../vdom/state-node.enum";
 
 export class Synchronizer {
     bold(span: StateNode) {
-        span.bold();
+        span.setFormat(StateNodeTextFormat.BOLD);
         const element = this.findElementMatchingStateNode(span);
         this.syncElement(element, span);
     }
@@ -49,7 +50,7 @@ export class Synchronizer {
             console.error("previousParagraph is not HTMLElement");
             return;
         }
-        previousParagraphStateNode.merge(paragraphStateNode);
+        previousParagraphStateNode.absorb(paragraphStateNode);
         DomElement.merge(previousParagraph, paragraph);
     }
 
