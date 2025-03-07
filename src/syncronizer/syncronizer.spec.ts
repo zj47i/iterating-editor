@@ -1,4 +1,3 @@
-// hello-world.test.js
 import "@testing-library/jest-dom";
 import { StateNode } from "../vdom/state-node";
 
