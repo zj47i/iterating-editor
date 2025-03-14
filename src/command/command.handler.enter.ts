@@ -1,12 +1,13 @@
-import { StateNode } from "../vdom/state-node";
-import { StateNodeType } from "../vdom/state-node.enum";
+import { VDomNode } from "../vdom/vdom-node";
+import { VDomNodeType } from "../vdom/vdom-node.enum";
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandHandler } from "./command.handler.interface";
+import { DomNode } from "../dom/dom-node";
 
 export class CommandHandlerEnter implements CommandHandler {
     constructor(
-        private editorDom: HTMLElement,
-        private editorStateNode: StateNode,
+        private editorDom: DomNode,
+        private editorVDomNode: VDomNode,
         private sync: Synchronizer
     ) {}
 
@@ -25,18 +26,20 @@ export class CommandHandlerEnter implements CommandHandler {
             selection.anchorNode instanceof HTMLElement &&
             selection.anchorNode.nodeName === "P"
         ) {
-            this.paragraphEnter$(selection, selection.anchorNode);
+            this.paragraphEnter$(
+                selection,
+                DomNode.fromExistingElement(selection.anchorNode)
+            );
         }
     }
 
-    private paragraphEnter$(selection: Selection, paragraph: HTMLElement) {
+    private paragraphEnter$(selection: Selection, paragraph: DomNode) {
         console.info("paragraphEnter$");
-        const paragraphStateNode =
-            this.sync.findStateNodeMatchingElement(paragraph);
-        const newParagraphStateNode = new StateNode(StateNodeType.PARAGRAPH);
-        this.sync.addNextSiblings(paragraphStateNode, [newParagraphStateNode]);
+        const vParagraph = this.sync.findVDomNodeFrom(paragraph);
+        const newVParagraph = new VDomNode(VDomNodeType.PARAGRAPH);
+        this.sync.addNewNextSiblings(vParagraph, [newVParagraph]);
         const range = document.createRange();
-        range.setStart(paragraph.nextElementSibling, 0);
+        range.setStart(paragraph.getNextSibling().getElement(), 0);
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
@@ -44,16 +47,15 @@ export class CommandHandlerEnter implements CommandHandler {
 
     private textNodeEnter$(selection: Selection, textNode: Text) {
         console.info("textNodeEnter$");
-        const span = textNode.parentElement;
-        const paragraph = span.parentElement;
+        const span = DomNode.fromExistingElement(textNode.parentElement);
+        const paragraph = span.getParent();
 
-        const paragraphStateNode =
-            this.sync.findStateNodeMatchingElement(paragraph);
+        const vParagraph = this.sync.findVDomNodeFrom(paragraph);
 
-        const newParagraphStateNode = new StateNode(StateNodeType.PARAGRAPH);
-        this.sync.addNextSiblings(paragraphStateNode, [newParagraphStateNode]);
+        const newVParagraph = new VDomNode(VDomNodeType.PARAGRAPH);
+        this.sync.addNewNextSiblings(vParagraph, [newVParagraph]);
 
-        if (!(paragraph.nextElementSibling instanceof HTMLElement)) {
+        if (!(paragraph.getNextSibling().getElement() instanceof HTMLElement)) {
             console.error("nextSibling is not HTMLElement");
             return;
         }
@@ -62,33 +64,35 @@ export class CommandHandlerEnter implements CommandHandler {
         const cursorPosition = selection.anchorOffset;
 
         if (cursorPosition !== textLength) {
-            const spanStateNode = this.sync.findStateNodeMatchingElement(span);
+            const spanVDomNode = this.sync.findVDomNodeFrom(span);
 
             if (cursorPosition === 0) {
-                this.sync.remove(span, spanStateNode);
+                this.sync.remove(span, spanVDomNode);
                 return;
             }
 
-            const former = span.textContent.slice(0, cursorPosition);
-            const latter = span.textContent.slice(cursorPosition);
+            const former = span
+                .getElement()
+                .textContent.slice(0, cursorPosition);
+            const latter = span.getElement().textContent.slice(cursorPosition);
 
-            this.sync.setText(spanStateNode, former);
-            const newSpanStateNode = new StateNode(StateNodeType.SPAN);
-            this.sync.appendStateNode(newParagraphStateNode, newSpanStateNode);
-            this.sync.setText(newSpanStateNode, latter);
+            this.sync.setText(spanVDomNode, former);
+            const newVSpan = new VDomNode(VDomNodeType.SPAN);
+            this.sync.appendNewVDomNode(newVParagraph, newVSpan);
+            this.sync.setText(newVSpan, latter);
         }
 
         if (cursorPosition === textLength) {
-            const newP = paragraph.nextElementSibling;
+            const newP = paragraph.getNextSibling();
             const range = document.createRange();
-            range.setStart(newP, 0);
+            range.setStart(newP.getElement(), 0);
             range.collapse(true);
             selection.removeAllRanges();
             selection.addRange(range);
         } else {
-            const newSpan = paragraph.nextElementSibling.firstElementChild;
+            const newSpan = paragraph.getNextSibling().getChildren()[0];
             const range = document.createRange();
-            range.setStart(newSpan, 0);
+            range.setStart(newSpan.getElement(), 0);
             range.collapse(true);
             selection.removeAllRanges();
             selection.addRange(range);

@@ -1,12 +1,12 @@
-import { DomElement } from "../dom/dom-element";
-import { StateNode } from "../vdom/state-node";
+import { DomNode } from "../dom/dom-node";
+import { VDomNode } from "../vdom/vdom-node";
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandHandler } from "./command.handler.interface";
 
 export class CommandHandlerInput implements CommandHandler {
     constructor(
-        private editorDom: HTMLElement,
-        private editorStateNode: StateNode,
+        private editorDom: DomNode,
+        private editorVDomNode: VDomNode,
         private sync: Synchronizer
     ) {}
 
@@ -21,7 +21,7 @@ export class CommandHandlerInput implements CommandHandler {
                 return;
             }
             const textNode = element;
-            const parent = textNode.parentElement;
+            const parent = DomNode.fromExistingElement(textNode.parentElement);
             if (parent.nodeName === "P") {
                 this.paragraphInput$(textNode, parent, selection);
                 return;
@@ -36,15 +36,13 @@ export class CommandHandlerInput implements CommandHandler {
 
     private paragraphInput$(
         textNode: Text,
-        paragraph: HTMLElement,
+        paragraph: DomNode,
         selection: Selection
     ) {
         console.info("paragraphInput$");
-        const newSpan = DomElement.createSpan();
-        newSpan.appendChild(textNode);
-        const paragraphStateNode =
-            this.sync.findStateNodeMatchingElement(paragraph);
-        this.sync.appendElement(paragraphStateNode, paragraph, newSpan);
+        const newSpan = DomNode.createSpan();
+        newSpan.appendTextNode(textNode);
+        this.sync.appendNewDomNode(paragraph, newSpan);
         const range = document.createRange();
         range.setStart(textNode, 1);
         range.collapse(true);
@@ -54,9 +52,8 @@ export class CommandHandlerInput implements CommandHandler {
 
     private textNodeInput$(textNode: Text, selection: Selection) {
         console.info("textNodeInput$");
-        const span = textNode.parentElement;
-
-        const spanStateNode = this.sync.findStateNodeMatchingElement(span);
-        this.sync.setSpanStateNodeText(spanStateNode, textNode.textContent);
+        const span = DomNode.fromExistingElement(textNode.parentElement);
+        const spanVDomNode = this.sync.findVDomNodeFrom(span);
+        this.sync.setSpanVDomNodeText(spanVDomNode, textNode.textContent);
     }
 }

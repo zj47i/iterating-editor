@@ -1,13 +1,13 @@
-interface StateNode {
-  type: string;
-  attributes: {
-    bold?: boolean;
-    [key: string]: any;
-  };
-  next?: StateNode;
+interface VDomNode {
+    type: string;
+    attributes: {
+        bold?: boolean;
+        [key: string]: any;
+    };
+    next?: VDomNode;
 }
 
 interface Selection {
-  start: StateNode;
-  end: StateNode;
-} 
+    start: VDomNode;
+    end: VDomNode;
+}

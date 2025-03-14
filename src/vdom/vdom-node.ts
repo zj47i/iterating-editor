@@ -1,21 +1,27 @@
-import { StateNodeTextFormat, StateNodeType } from "./state-node.enum";
+import { EditorNode } from "../editor-node.interface";
+import { TextFormat } from "../enum/text-format.enum";
+import { VDomNodeType } from "./vdom-node.enum";
 
-export class StateNode {
-    public type: StateNodeType;
-    public parent: StateNode | null;
-    public children: StateNode[];
+export class VDomNode implements EditorNode<VDomNode> {
+    public type: VDomNodeType;
+    public parent: VDomNode | null;
+    public children: VDomNode[];
     private text?: string | null;
     public format?: string[];
 
-    constructor(type: StateNodeType) {
+    constructor(type: VDomNodeType) {
         this.type = type;
         this.parent = null;
         this.children = [];
-        this.text = null
+        this.text = null;
         this.format = [];
     }
 
-    setFormat(format: StateNodeTextFormat) {
+    getParent(): VDomNode {
+        return this.parent;
+    }
+
+    setFormat(format: TextFormat) {
         if (this.type !== "span") {
             console.error("only span node can be bold");
             return;
@@ -29,10 +35,10 @@ export class StateNode {
         this.format.push(format);
     }
 
-    public absorb(other: StateNode) {
+    public absorb(other: VDomNode) {
         for (const child of other.children) {
             child.parent = null;
-            this.appendNode(child);
+            this.append(child);
         }
         other.remove();
     }
@@ -54,7 +60,7 @@ export class StateNode {
         this.parent = null;
     }
 
-    appendNode(node: StateNode) {
+    append(node: VDomNode) {
         if (node.parent) {
             console.error("node already has parent. detach first");
             return;
@@ -94,13 +100,13 @@ export class StateNode {
         this.text = this.text.slice(0, index) + text + this.text.slice(index);
     }
 
-    static createRootState(): StateNode {
-        return new StateNode(StateNodeType.ROOT);
+    static createRootNode(): VDomNode {
+        return new VDomNode(VDomNodeType.ROOT);
     }
 
-    public findPathToAncestorNode(node: StateNode): StateNode[] {
-        const path: StateNode[] = [];
-        let current: StateNode = this;
+    public findPathToAncestorNode(node: VDomNode): VDomNode[] {
+        const path: VDomNode[] = [];
+        let current: VDomNode = this;
         while (current !== node) {
             path.push(current);
             current = current.parent;
@@ -109,9 +115,9 @@ export class StateNode {
         return path;
     }
 
-    public findPathToRoot(): StateNode[] {
-        const path: StateNode[] = [];
-        let current: StateNode = this;
+    public findPathToRoot(): VDomNode[] {
+        const path: VDomNode[] = [];
+        let current: VDomNode = this;
         while (current) {
             path.push(current);
             current = current.parent;
@@ -120,9 +126,9 @@ export class StateNode {
     }
 
     public static findLowestCommonAncestor(
-        node1: StateNode,
-        node2: StateNode
-    ): StateNode | undefined {
+        node1: VDomNode,
+        node2: VDomNode
+    ): VDomNode | undefined {
         const path1 = node1.findPathToRoot();
         const path2 = node2.findPathToRoot();
         const setPath2 = new Set(path2);
@@ -134,14 +140,14 @@ export class StateNode {
         console.error("no common ancestor found");
     }
 
-    public static traversalAfterPath(path: StateNode[]) {
-        const result: StateNode[] = [];
+    public static traversalAfterPath(path: VDomNode[]) {
+        const result: VDomNode[] = [];
         if (path.length === 1) {
             result.push(path[0]);
             return result;
         }
 
-        const stack: StateNode[] = [];
+        const stack: VDomNode[] = [];
 
         let i = path.length - 2;
         while (i >= 0) {
@@ -160,7 +166,7 @@ export class StateNode {
             const current = stack.pop();
             const index = path.indexOf(current);
             if (index === -1) {
-                result.push(...StateNode.preOrderTraversal(current));
+                result.push(...VDomNode.preOrderTraversal(current));
                 continue;
             }
             if (index === 0) {
@@ -174,14 +180,14 @@ export class StateNode {
 
     static from(element: HTMLElement) {
         if (element.nodeName === "P") {
-            return new StateNode(StateNodeType.PARAGRAPH);
+            return new VDomNode(VDomNodeType.PARAGRAPH);
         }
         if (element.nodeName === "SPAN") {
-            return new StateNode(StateNodeType.SPAN);
+            return new VDomNode(VDomNodeType.SPAN);
         }
     }
 
-    public static traversalBeforePath(p: StateNode[]): StateNode[] {
+    public static traversalBeforePath(p: VDomNode[]): VDomNode[] {
         const path = Array.from(p);
         const states = [];
         const current = path.pop();
@@ -192,7 +198,9 @@ export class StateNode {
             const index = parent.children.indexOf(current);
             if (index >= 1) {
                 for (let i = 0; i < index; i++) {
-                    states.push(...StateNode.preOrderTraversal(parent.children[i]));
+                    states.push(
+                        ...VDomNode.preOrderTraversal(parent.children[i])
+                    );
                 }
             }
             states.push(current);
@@ -201,9 +209,9 @@ export class StateNode {
         return states;
     }
 
-    public static preOrderTraversal(from: StateNode): StateNode[] {
-        const stack: StateNode[] = [from];
-        const result: StateNode[] = [];
+    public static preOrderTraversal(from: VDomNode): VDomNode[] {
+        const stack: VDomNode[] = [from];
+        const result: VDomNode[] = [];
 
         while (stack.length > 0) {
             const current = stack.pop();
@@ -217,9 +225,9 @@ export class StateNode {
         return result;
     }
 
-    public levelOrderTraversal(): StateNode[] {
-        const result: StateNode[] = [this];
-        const stack: StateNode[] = [this];
+    public levelOrderTraversal(): VDomNode[] {
+        const result: VDomNode[] = [this];
+        const stack: VDomNode[] = [this];
 
         while (stack.length > 0) {
             const current = stack.shift();
@@ -235,10 +243,10 @@ export class StateNode {
     // ELEMENTS에 대한 순서를 알 수 있어서 이 함수가 필요없음.
     // 이후를 위해 남겨두기
     public static determineLeftRight(
-        node1: StateNode,
-        node2: StateNode
-    ): [StateNode, StateNode] {
-        const ancestor = StateNode.findLowestCommonAncestor(node1, node2);
+        node1: VDomNode,
+        node2: VDomNode
+    ): [VDomNode, VDomNode] {
+        const ancestor = VDomNode.findLowestCommonAncestor(node1, node2);
         const path1 = node1.findPathToAncestorNode(ancestor);
         const path2 = node2.findPathToAncestorNode(ancestor);
         if (path1.length === 1) {
@@ -264,21 +272,21 @@ export class StateNode {
     }
 
     public static findStatesBetween(
-        left: StateNode,
-        right: StateNode
-    ): StateNode[] {
-        const result: StateNode[] = [];
+        left: VDomNode,
+        right: VDomNode
+    ): VDomNode[] {
+        const result: VDomNode[] = [];
 
-        const ancestor = StateNode.findLowestCommonAncestor(left, right);
+        const ancestor = VDomNode.findLowestCommonAncestor(left, right);
         const path1 = left.findPathToAncestorNode(ancestor);
         const path2 = right.findPathToAncestorNode(ancestor);
 
         if (path1.length === 1) {
-            result.push(...StateNode.traversalBeforePath(path2));
+            result.push(...VDomNode.traversalBeforePath(path2));
             return result;
         }
         if (path2.length === 1) {
-            result.push(...StateNode.traversalBeforePath(path1));
+            result.push(...VDomNode.traversalBeforePath(path1));
             return result;
         }
 
@@ -286,13 +294,13 @@ export class StateNode {
         const index2 = ancestor.children.indexOf(path2[path2.length - 2]);
 
         result.push(
-            ...StateNode.traversalAfterPath(path1.slice(0, path1.length - 1))
+            ...VDomNode.traversalAfterPath(path1.slice(0, path1.length - 1))
         );
         for (let i = index1 + 1; i < index2; i++) {
-            result.push(...StateNode.preOrderTraversal(ancestor.children[i]));
+            result.push(...VDomNode.preOrderTraversal(ancestor.children[i]));
         }
         result.push(
-            ...StateNode.traversalBeforePath(path2.slice(0, path2.length - 1))
+            ...VDomNode.traversalBeforePath(path2.slice(0, path2.length - 1))
         );
 
         return result;
@@ -322,7 +330,7 @@ export class StateNode {
         return this.parent.children[index + 1];
     }
 
-    public addNextSiblings(nodes: StateNode[]) {
+    public addNextSiblings(nodes: VDomNode[]) {
         for (const node of nodes) {
             if (node.parent) {
                 console.error("node already has parent. detach first");

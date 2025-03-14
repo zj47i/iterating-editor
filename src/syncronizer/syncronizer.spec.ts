@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { StateNode } from "../vdom/state-node";
+import { VDomNode } from "../vdom/vdom-node";
 
 test("syncEditor", () => {
     // 테스트할 DOM 작성
@@ -8,5 +8,5 @@ test("syncEditor", () => {
   `;
 
     const dom = document.getElementById("@editor") as HTMLDivElement;
-    const state = StateNode.createRootState();
+    const vdomNode = VDomNode.createRootNode();
 });

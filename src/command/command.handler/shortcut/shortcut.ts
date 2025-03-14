@@ -1,13 +1,13 @@
-import { DomElement } from "../../../dom/dom-element";
-import { StateNode } from "../../../vdom/state-node";
-import { StateNodeType } from "../../../vdom/state-node.enum";
+import { DomNode } from "../../../dom/dom-node";
+import { VDomNode } from "../../../vdom/vdom-node";
+import { VDomNodeType } from "../../../vdom/vdom-node.enum";
 import { Synchronizer } from "../../../syncronizer/syncronizer";
 import { CommandHandler } from "../../command.handler.interface";
 
 export class ShortcutHandler implements CommandHandler {
     constructor(
-        private editorDom: HTMLElement,
-        private editorStateNode: StateNode,
+        private editorDom: DomNode,
+        private editorVDomNode: VDomNode,
         private sync: Synchronizer
     ) {}
 
@@ -22,23 +22,15 @@ export class ShortcutHandler implements CommandHandler {
         }
     }
 
-    private getElement(node: Node) {
-        if (node.nodeType === Node.TEXT_NODE) {
-            return node.parentElement;
-        } else {
-            if (!(node instanceof HTMLElement)) {
-                console.error("node is not HTMLElement");
-                return;
-            }
-            return node;
-        }
-    }
-
     private bold$(event: KeyboardEvent) {
         console.log("bold$");
         event.preventDefault();
         const selection = document.getSelection();
         let { anchorNode, anchorOffset, focusNode, focusOffset } = selection;
+        let startNode: Node,
+            endNode: Node,
+            startNodeOffset: number,
+            endNodeOffset: number;
         if (
             selection.anchorNode === selection.focusNode &&
             selection.anchorOffset === selection.focusOffset
@@ -51,83 +43,94 @@ export class ShortcutHandler implements CommandHandler {
             anchorNode.compareDocumentPosition(focusNode) ===
             Node.DOCUMENT_POSITION_PRECEDING
         ) {
-            [anchorNode, focusNode] = [focusNode, anchorNode];
-            [anchorOffset, focusOffset] = [focusOffset, anchorOffset];
+            [startNode, endNode, startNodeOffset, endNodeOffset] = [
+                focusNode,
+                anchorNode,
+                focusOffset,
+                anchorOffset,
+            ];
+        } else {
+            [startNode, endNode, startNodeOffset, endNodeOffset] = [
+                anchorNode,
+                focusNode,
+                anchorOffset,
+                focusOffset,
+            ];
         }
 
-        const anchorSpan = this.getElement(anchorNode);
-        const focusSpan = this.getElement(focusNode);
-        const anchorSpanStateNode =
-            this.sync.findStateNodeMatchingElement(anchorSpan);
-        const focusSpanStateNode =
-            this.sync.findStateNodeMatchingElement(focusSpan);
+        const startSpan = DomNode.fromExistingElement(startNode.parentElement);
+        const endSpan = DomNode.fromExistingElement(endNode.parentElement);
+        const startSpanVDomNode = this.sync.findVDomNodeFrom(startSpan);
+        const endSpanVDomNode = this.sync.findVDomNodeFrom(endSpan);
 
-        if (anchorSpan === focusSpan) {
-            const text = anchorSpan.textContent;
-            const formerText = text.slice(0, anchorOffset);
-            const selectedText = text.slice(anchorOffset, focusOffset);
-            const latterText = text.slice(focusOffset);
+        if (startSpan === endSpan) {
+            const text = startSpan.getElement().textContent;
+            const formerText = text.slice(0, startNodeOffset);
+            const selectedText = text.slice(startNodeOffset, endNodeOffset);
+            const latterText = text.slice(endNodeOffset);
 
-            const formerSpanStateNode = anchorSpanStateNode;
-            this.sync.setText(formerSpanStateNode, formerText);
-            const selectedSpanStateNode = new StateNode(StateNodeType.SPAN);
-            selectedSpanStateNode.setText(selectedText);
-            const latterSpanStateNode = new StateNode(StateNodeType.SPAN);
-            latterSpanStateNode.setText(latterText);
-            this.sync.addNextSiblings(formerSpanStateNode, [
-                selectedSpanStateNode,
-                latterSpanStateNode,
+            const formerSpanVDomNode = startSpanVDomNode;
+            const selectedSpanVDomNode = new VDomNode(VDomNodeType.SPAN);
+            const latterSpanVDomNode = new VDomNode(VDomNodeType.SPAN);
+            this.sync.addNewNextSiblings(formerSpanVDomNode, [
+                selectedSpanVDomNode,
+                latterSpanVDomNode,
             ]);
-            this.sync.bold(selectedSpanStateNode);
+
+            this.sync.setText(formerSpanVDomNode, formerText);
+            this.sync.setText(selectedSpanVDomNode, selectedText);
+            this.sync.setText(latterSpanVDomNode, latterText);
+
+            this.sync.bold(selectedSpanVDomNode);
 
             requestAnimationFrame(() => {
-                const node = anchorSpan.nextSibling;
+                const node = startSpan.getNextSibling().getElement();
                 const range = document.createRange();
                 range.selectNode(node);
                 selection.removeAllRanges();
                 selection.addRange(range);
             });
         } else {
-            const spanStateNodes = StateNode.findStatesBetween(
-                anchorSpanStateNode,
-                focusSpanStateNode
-            ).filter((stateNode) => stateNode.type === "span");
+            const spanVDomNodes = VDomNode.findStatesBetween(
+                startSpanVDomNode,
+                endSpanVDomNode
+            ).filter((vdomNode) => vdomNode.type === "span");
 
             const firstSpanText = anchorNode.textContent;
-            const firstSpanFormerText = firstSpanText.slice(0, anchorOffset);
-            const firstSpanSelectedText = firstSpanText.slice(anchorOffset);
+            const firstSpanFormerText = firstSpanText.slice(0, startNodeOffset);
+            const firstSpanSelectedText = firstSpanText.slice(startNodeOffset);
 
-            const firstSpanStateNode = spanStateNodes[0];
-            this.sync.setText(firstSpanStateNode, firstSpanFormerText);
-            const firstSelectedSpanStateNode = new StateNode(
-                StateNodeType.SPAN
-            );
-            firstSelectedSpanStateNode.setText(firstSpanSelectedText);
-            this.sync.addNextSiblings(firstSpanStateNode, [
-                firstSelectedSpanStateNode,
+            const firstSpanVDomNode = spanVDomNodes[0];
+            this.sync.setText(firstSpanVDomNode, firstSpanFormerText);
+            const firstSelectedSpanVDomNode = new VDomNode(VDomNodeType.SPAN);
+            firstSelectedSpanVDomNode.setText(firstSpanSelectedText);
+            this.sync.addNewNextSiblings(firstSpanVDomNode, [
+                firstSelectedSpanVDomNode,
             ]);
-            this.sync.bold(firstSelectedSpanStateNode);
+            this.sync.bold(firstSelectedSpanVDomNode);
 
             const lastSpanText = focusNode.textContent;
-            const lastSpanSelectedText = lastSpanText.slice(0, focusOffset);
-            const lastSpanLatterText = lastSpanText.slice(focusOffset);
+            const lastSpanSelectedText = lastSpanText.slice(0, endNodeOffset);
+            const lastSpanLatterText = lastSpanText.slice(endNodeOffset);
 
-            const lastSpanStateNode = spanStateNodes[spanStateNodes.length - 1];
-            this.sync.setText(lastSpanStateNode, lastSpanSelectedText);
-            const lastLatterSpanStateNode = new StateNode(StateNodeType.SPAN);
-            lastLatterSpanStateNode.setText(lastSpanLatterText);
-            this.sync.addNextSiblings(lastSpanStateNode, [
-                lastLatterSpanStateNode,
+            const lastSpanVDomNode = spanVDomNodes[spanVDomNodes.length - 1];
+            this.sync.setText(lastSpanVDomNode, lastSpanSelectedText);
+            const lastLatterSpanVDomNode = new VDomNode(VDomNodeType.SPAN);
+            lastLatterSpanVDomNode.setText(lastSpanLatterText);
+            this.sync.addNewNextSiblings(lastSpanVDomNode, [
+                lastLatterSpanVDomNode,
             ]);
-            this.sync.bold(lastSpanStateNode);
+            this.sync.bold(lastSpanVDomNode);
 
-            for (let i = 1; i < spanStateNodes.length - 1; i++) {
-                this.sync.bold(spanStateNodes[i]);
+            for (let i = 1; i < spanVDomNodes.length - 1; i++) {
+                this.sync.bold(spanVDomNodes[i]);
             }
 
             requestAnimationFrame(() => {
-                const startNode = anchorSpan.nextSibling.firstChild;
-                const endNode = focusSpan.firstChild;
+                const startNode = startSpan
+                    .getNextSibling()
+                    .getElement().firstChild;
+                const endNode = endSpan.getElement().firstChild;
                 const range = document.createRange();
                 range.setStart(startNode, 0);
                 range.setEnd(endNode, endNode.textContent.length - 1);

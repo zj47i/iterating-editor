@@ -1,7 +1,7 @@
 import diff from "fast-diff";
 
-test("초기 state 확인", () => {
-    const from = "초기 state 확인";
+test("초기 vdomNode 확인", () => {
+    const from = "초기 vdomNode 확인";
     const to = "초기 stateㅁㄴㅇ 확인";
     const result = diff(from, to);
     let n = "";
@@ -11,6 +11,6 @@ test("초기 state 확인", () => {
         } else if (item[0] === 1) {
             n = n.concat(`${item[1]}`);
         }
-    })
+    });
     expect(n).toBe(to);
 });

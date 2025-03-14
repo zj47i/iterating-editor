@@ -1,27 +1,30 @@
 import { Command } from "./command/command";
-import { StateNode } from "./vdom/state-node";
-import { StateNodeType } from "./vdom/state-node.enum";
+import { VDomNode } from "./vdom/vdom-node";
+import { VDomNodeType } from "./vdom/vdom-node.enum";
 import { Synchronizer } from "./syncronizer/syncronizer";
+import { DomNode } from "./dom/dom-node";
 
 export class Editor {
-    private vdom: StateNode;
+    private vdom: VDomNode;
     private sync: Synchronizer;
     private command: Command;
 
-    constructor(private dom: HTMLDivElement) {
-        this.dom.contentEditable = "true";
-        this.vdom = StateNode.createRootState();
+    constructor(private dom: DomNode) {
+        this.dom.getElement().contentEditable = "true";
+        this.vdom = VDomNode.createRootNode();
         this.sync = new Synchronizer(dom, this.vdom);
 
-        const paragraphStateNode = new StateNode(StateNodeType.PARAGRAPH);
-        this.sync.appendStateNode(this.vdom, paragraphStateNode);
+        this.sync.appendNewVDomNode(
+            this.vdom,
+            new VDomNode(VDomNodeType.PARAGRAPH)
+        );
 
         this.command = new Command(this.dom, this.vdom, this.sync);
         this.addEventListener();
     }
 
     addEventListener() {
-        this.dom.addEventListener("keydown", (event) => {
+        this.dom.getElement().addEventListener("keydown", (event) => {
             console.log("keydown event:", event);
             if (!(event instanceof KeyboardEvent)) {
                 console.error("event is not KeyboardEvent");
@@ -30,7 +33,7 @@ export class Editor {
             this.command.keydown(event);
         });
 
-        this.dom.addEventListener("input", (event) => {
+        this.dom.getElement().addEventListener("input", (event) => {
             console.log("input event:", event);
             if (!(event instanceof InputEvent)) {
                 console.error("event is not InputEvent");
@@ -39,7 +42,7 @@ export class Editor {
             this.command.input(event as any);
         });
 
-        this.dom.addEventListener("click", (event) => {
+        this.dom.getElement().addEventListener("click", (event) => {
             document.addEventListener("selectionchange", () => {
                 const selection = document.getSelection();
                 const s = document.getElementById("@selection");

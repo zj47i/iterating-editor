@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { DomElement } from "../dom-element";
+import { DomNode } from "../dom-node";
 
 test("remove", () => {
     // 테스트할 DOM 작성
@@ -11,16 +11,17 @@ test("remove", () => {
     </div>
   `;
 
-  const p = document.getElementById("target");
-  DomElement.remove(p);
+    const p = document.getElementById("target");
+    const domNode = new DomNode(p);
+    domNode.remove();
 
-  expect(document.body).toHaveTextContent("stay");
-  expect(document.body).not.toHaveTextContent("remove");
+    expect(document.body).toHaveTextContent("stay");
+    expect(document.body).not.toHaveTextContent("remove");
 });
 
 test("remove2", () => {
-  // 테스트할 DOM 작성
-  document.body.innerHTML = `
+    // 테스트할 DOM 작성
+    document.body.innerHTML = `
   <div> 
     <p> stay </p> 
     <div id="target"> 
@@ -29,11 +30,12 @@ test("remove2", () => {
   </div>
 `;
 
-const p = document.getElementById("target");
+    const p = document.getElementById("target");
+    const domNode = new DomNode(p);
 
-expect(document.body).toHaveTextContent("nested remove");
-DomElement.remove(p);
+    expect(document.body).toHaveTextContent("nested remove");
+    p.remove();
 
-expect(document.body).toHaveTextContent("stay");
-expect(document.body).not.toHaveTextContent("nested remove");
+    expect(document.body).toHaveTextContent("stay");
+    expect(document.body).not.toHaveTextContent("nested remove");
 });

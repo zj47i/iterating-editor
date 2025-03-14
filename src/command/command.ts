@@ -1,4 +1,4 @@
-import { StateNode } from "../vdom/state-node";
+import { VDomNode } from "../vdom/vdom-node";
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandHandlerBackspace } from "./command.handler.backspace";
 import { CommandHandlerEnter } from "./command.handler.enter";
@@ -6,6 +6,7 @@ import { CommandHandlerInput } from "./command.handler.input";
 import { CommandHandler } from "./command.handler.interface";
 import { ShortcutHandler } from "./command.handler/shortcut/shortcut";
 import { CommandKeyboardEvent } from "./command.keyboard-event.enum";
+import { DomNode } from "../dom/dom-node";
 
 export class Command {
     private enterHandler: CommandHandler;
@@ -13,8 +14,8 @@ export class Command {
     private inputHandler: CommandHandler;
     private shortcutHandler: CommandHandler;
     constructor(
-        private dom: HTMLElement,
-        private vdom: StateNode,
+        private dom: DomNode,
+        private vdom: VDomNode,
         private sync: Synchronizer
     ) {
         this.enterHandler = new CommandHandlerEnter(

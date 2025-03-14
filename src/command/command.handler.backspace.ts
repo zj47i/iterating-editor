@@ -1,11 +1,12 @@
-import { StateNode } from "../vdom/state-node";
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandHandler } from "./command.handler.interface";
+import { DomNode } from "../dom/dom-node";
+import { VDomNode } from "../vdom/vdom-node";
 
 export class CommandHandlerBackspace implements CommandHandler {
     constructor(
-        private editorDom: HTMLElement,
-        private editorStateNode: StateNode,
+        private editorDom: DomNode,
+        private editorVDomNode: VDomNode,
         private sync: Synchronizer
     ) {}
 
@@ -28,19 +29,18 @@ export class CommandHandlerBackspace implements CommandHandler {
                 console.error("anchorNode is not HTMLElement");
                 return;
             }
-            this.pullUpParagraphLine$(selection.anchorNode, event);
+            this.pullUpParagraphLine$(DomNode.fromExistingElement(selection.anchorNode), event);
             // event.preventDefnault();
         }
     }
 
-    private pullUpParagraphLine$(paragraph: HTMLElement, event: KeyboardEvent) {
+    private pullUpParagraphLine$(paragraph: DomNode, event: KeyboardEvent) {
         console.info("pullUpParagraphLine$");
-        const paragraphStateNode =
-            this.sync.findStateNodeMatchingElement(paragraph);
+        const paragraphVDomNode = this.sync.findVDomNodeFrom(paragraph);
 
-        const previousParagraphStateNode =
-            paragraphStateNode.getPreviousSibling();
-        if (!previousParagraphStateNode) {
+        const previousParagraphVDomNode =
+            paragraphVDomNode.getPreviousSibling();
+        if (!previousParagraphVDomNode) {
             event.preventDefault();
             return;
         }
@@ -52,21 +52,19 @@ export class CommandHandlerBackspace implements CommandHandler {
         event: KeyboardEvent
     ) {
         console.info("pullUpLine$");
-        const span = textNode.parentElement;
-        const paragraph = span.parentElement;
-        const paragraphStateNode =
-            this.sync.findStateNodeMatchingElement(paragraph);
+        const span = DomNode.fromExistingElement(textNode.parentElement);
+        const paragraph = span.getParent();
+        const paragraphVDomNode = this.sync.findVDomNodeFrom(paragraph);
 
-        const previousParagraphStateNode =
-            paragraphStateNode.getPreviousSibling();
-        if (!previousParagraphStateNode) {
+        const previousParagraphVDomNode =
+            paragraphVDomNode.getPreviousSibling();
+        if (!previousParagraphVDomNode) {
             event.preventDefault();
             return;
         }
         this.sync.mergeParagraphs(
-            previousParagraphStateNode,
-            paragraphStateNode,
-            paragraph
+            previousParagraphVDomNode,
+            paragraphVDomNode,
         );
         const range = document.createRange();
         range.setStart(textNode, 0);
