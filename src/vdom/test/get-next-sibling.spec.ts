@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { mockVdom } from "./vdom.mock";
+import { mockVdom } from "./vdom.mock.spec";
 
 test("getNextSibling", () => {
     const vdom = mockVdom();

@@ -19,7 +19,7 @@ export class Editor {
             new VDomNode(VDomNodeType.PARAGRAPH)
         );
 
-        this.command = new Command(this.dom, this.vdom, this.sync);
+        this.command = new Command(this.sync);
         this.addEventListener();
     }
 
@@ -39,7 +39,7 @@ export class Editor {
                 console.error("event is not InputEvent");
                 return;
             }
-            this.command.input(event as any);
+            this.command.input(event);
         });
 
         this.dom.getElement().addEventListener("click", (event) => {

@@ -1,5 +1,5 @@
 import { VDomNode } from "../vdom-node";
-import { mockVdom2 } from "./vdom.mock2";
+import { mockVdom2 } from "./vdom.mock2.spec";
 
 test("preOrderTraversal", () => {
     const vdomNode = mockVdom2();

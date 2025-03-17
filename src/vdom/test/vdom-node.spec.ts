@@ -1,7 +1,6 @@
 import "@testing-library/jest-dom";
-import { mockVdom } from "./vdom.mock";
-import { Synchronizer } from "../../syncronizer/syncronizer";
-import { mockVdom2 } from "./vdom.mock2";
+import { mockVdom } from "./vdom.mock.spec";
+import { mockVdom2 } from "./vdom.mock2.spec";
 import { VDomNode } from "../vdom-node";
 import { VDomNodeType } from "../vdom-node.enum";
 
@@ -164,13 +163,13 @@ test("traversalBeforePath", () => {
     expect(states[15]).toBe(vdomNode.span10);
 });
 
-test("findStatesBetween", () => {
+test("findVDomNodesBetween", () => {
     const vdomNode = mockVdom();
 
     const node1 = vdomNode.span2;
     const node2 = vdomNode.span18;
 
-    const states = VDomNode.findStatesBetween(node1, node2);
+    const states = VDomNode.findVDomNodesBetween(node1, node2);
     expect(states.length).toBe(23);
     expect(states[0]).toBe(vdomNode.span2);
     expect(states[1]).toBe(vdomNode.span3);
@@ -202,16 +201,16 @@ test("addNextSiblings", () => {
 
     const span4 = vdomNode.span4;
     const parent = span4.parent;
-    const index = parent.children.indexOf(span4);
+    const index = parent.getChildren().indexOf(span4);
 
     const newSpan1 = new VDomNode(VDomNodeType.SPAN);
     const newSpan2 = new VDomNode(VDomNodeType.SPAN);
     span4.addNextSiblings([newSpan1, newSpan2]);
 
-    expect(parent.children[index]).toBe(span4);
-    expect(parent.children[index + 1]).toBe(newSpan1);
-    expect(parent.children[index + 2]).toBe(newSpan2);
-    expect(parent.children[index + 3]).toBe(vdomNode.nestedParagraph1);
+    expect(parent.getChildren()[index]).toBe(span4);
+    expect(parent.getChildren()[index + 1]).toBe(newSpan1);
+    expect(parent.getChildren()[index + 2]).toBe(newSpan2);
+    expect(parent.getChildren()[index + 3]).toBe(vdomNode.nestedParagraph1);
 });
 
 test("spliceText", () => {

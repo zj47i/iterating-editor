@@ -1,87 +1,68 @@
 import { DomNode } from "../dom/dom-node";
-import { TextFormat } from "../enum/text-format.enum";
+import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
-import diff from "fast-diff";
 
 export class Synchronizer {
-    bold(vSpan: VDomNode) {
-        vSpan.setFormat(TextFormat.BOLD);
-        const span = this.findDomNodeFrom(vSpan);
-        span.setFormat(TextFormat.BOLD);
-    }
-
     constructor(private dom: DomNode, private vdom: VDomNode) {}
 
-    private matchType(element: HTMLElement, vdomNode: VDomNode) {
-        if (element.id === "@editor" && vdomNode.type !== "root") {
-            return false;
+    public setText(spanVDomNode: VDomNode, text: string, isFromDom = false) {
+        if (spanVDomNode.type !== "span") {
+            console.error("spanVDomNode.type !== span");
+            return;
         }
-        if (element.nodeName === "P" && vdomNode.type !== "paragraph") {
-            return false;
-        }
-
-        if (element.nodeName === "SPAN" && vdomNode.type !== "span") {
-            return false;
-        }
-
-        return true;
-    }
-
-    setText(spanVDomNode: VDomNode, text: string) {
         spanVDomNode.setText(text);
+        if (isFromDom) {
+            return;
+        }
         const span = this.findDomNodeFrom(spanVDomNode);
         span.getElement().textContent = text;
     }
 
-    setSpanVDomNodeText(spanVDomNode: VDomNode, textContent: string) {
-        spanVDomNode.setText(textContent);
+    public format(vSpan: VDomNode, textFormat: TextFormat) {
+        const span = this.findDomNodeFrom(vSpan);
+        vSpan.setFormat(textFormat);
+        span.setFormat(textFormat);
     }
 
-    mergeParagraphs(
-        previousParagraphVDomNode: VDomNode,
-        paragraphVDomNode: VDomNode
-    ) {
-        const paragraph = this.findDomNodeFrom(paragraphVDomNode);
-        const previousParagraph = this.findDomNodeFrom(
-            previousParagraphVDomNode
-        );
-        if (!previousParagraph) {
-            console.error("previousParagraph is undefined");
+    public merge(vParagraph1: VDomNode, vParagraph2: VDomNode) {
+        const paragraph1 = this.findDomNodeFrom(vParagraph1);
+        const paragraph2 = this.findDomNodeFrom(vParagraph2);
+        if (!paragraph1) {
+            console.error("paragraph1 is undefined");
         }
-        if (!(previousParagraph.getElement() instanceof HTMLElement)) {
-            console.error("previousParagraph's element is not HTMLElement");
+        if (!(paragraph1.getElement() instanceof HTMLElement)) {
+            console.error("paragraph1's element is not HTMLElement");
             return;
         }
-        previousParagraphVDomNode.absorb(paragraphVDomNode);
-        previousParagraph.absorb(paragraph);
+        vParagraph1.absorb(vParagraph2);
+        paragraph1.absorb(paragraph2);
     }
 
-    appendNewVDomNode(vParent: VDomNode, vChild: VDomNode) {
+    public appendNewVDomNode(vParent: VDomNode, vChild: VDomNode) {
         const parent = this.findDomNodeFrom(vParent);
-        if (vParent.type === "paragraph" && vParent.isEmpty()) {
-            parent.empty();
-        }
         const child = DomNode.from(vChild);
         vParent.append(vChild);
         parent.append(child);
     }
 
-    appendNewDomNode(parent: DomNode, child: DomNode) {
+    public appendNewDomNode(parent: DomNode, child: DomNode) {
         const vParent = this.findVDomNodeFrom(parent);
-        if (vParent.type === "paragraph" && vParent.isEmpty()) {
-            parent.empty();
-        }
         const vChild = VDomNode.from(child.getElement());
-        parent.append(child);
         vParent.append(vChild);
+        parent.append(child);
     }
 
-    remove(element: DomNode, vdomNode: VDomNode) {
+    public remove(vdomNode: VDomNode) {
+        const domNode = this.findDomNodeFrom(vdomNode);
+        const parent = domNode.getParent();
         vdomNode.remove();
-        element.remove();
+        domNode.remove();
+        if (parent && parent.getNodeName() === "P" && parent.isEmpty()) {
+            parent.getElement().innerHTML = "<br>";
+        }
     }
 
-    addNewNextSiblings(vdomNode: VDomNode, siblings: VDomNode[]) {
+    public addNewNextSiblings(vdomNode: VDomNode, siblings: VDomNode[]) {
         const domNode = this.findDomNodeFrom(vdomNode);
         vdomNode.addNextSiblings(siblings);
         const siblingDomNodes = siblings.map((sibling) =>
@@ -90,7 +71,7 @@ export class Synchronizer {
         domNode.addNextSiblings(siblingDomNodes);
     }
 
-    findElementIndexPathToRoot(element: HTMLElement): number[] {
+    private findPathToRoot(element: HTMLElement): number[] {
         const path: number[] = [];
         while (element.id !== "@editor") {
             if (!element.parentElement) {
@@ -107,35 +88,35 @@ export class Synchronizer {
         return path;
     }
 
-    findVDomNodeIndexPathToRoot(vdomNode: VDomNode): number[] {
+    private findPathToVRoot(vdomNode: VDomNode): number[] {
         const path: number[] = [];
         while (vdomNode.type !== "root") {
             if (!vdomNode.parent) {
                 console.error("vdomNode.parent is undefined");
                 return [];
             }
-            const index = vdomNode.parent.children.indexOf(vdomNode);
+            const index = vdomNode.parent.getChildren().indexOf(vdomNode);
             path.push(index);
             vdomNode = vdomNode.parent;
         }
         return path;
     }
 
-    findVDomNodeFrom(domElement: DomNode): VDomNode {
+    public findVDomNodeFrom(domElement: DomNode): VDomNode {
         const element = domElement.getElement();
-        const path = this.findElementIndexPathToRoot(element);
+        const path = this.findPathToRoot(element);
         if (path.length === 0) {
             return this.vdom;
         }
         let vdomNode = this.vdom;
         for (let i = path.length - 1; i >= 0; i--) {
-            vdomNode = vdomNode.children[path[i]];
+            vdomNode = vdomNode.getChildren()[path[i]];
         }
         return vdomNode;
     }
 
-    findDomNodeFrom(vdomNode: VDomNode): DomNode {
-        const path = this.findVDomNodeIndexPathToRoot(vdomNode);
+    public findDomNodeFrom(vdomNode: VDomNode): DomNode {
+        const path = this.findPathToVRoot(vdomNode);
         if (path.length === 0) {
             return this.dom;
         }
@@ -153,5 +134,64 @@ export class Synchronizer {
             element = e;
         }
         return element;
+    }
+
+    public checkSync(): boolean {
+        const vDomStack: VDomNode[] = [this.vdom];
+        const domStack: DomNode[] = [this.dom];
+        while (vDomStack.length > 0) {
+            const vNode = vDomStack.pop();
+            const domNode = domStack.pop();
+            if (vNode.type === "root") {
+                if (domNode.getElement().id !== "@editor") {
+                    throw new Error(
+                        "vNode.type === root && domNode.id !== @editor"
+                    );
+                }
+            }
+
+            if (vNode.type === "paragraph") {
+                if (domNode.getElement().nodeName !== "P") {
+                    throw new Error(
+                        "vNode.type === paragraph && domNode.nodeName !== P"
+                    );
+                }
+                if (vNode.isEmpty() !== domNode.isEmpty()) {
+                    throw new Error("vNode.isEmpty() !== domNode.isEmpty()");
+                }
+            }
+
+            if (vNode.type === "span") {
+                if (domNode.getElement().nodeName !== "SPAN") {
+                    throw new Error(
+                        "vNode.type === span && domNode.nodeName !== SPAN"
+                    );
+                }
+                const vFormats = vNode.getFormats().sort();
+                const formats = domNode.getFormats().sort();
+                if (vFormats.length !== formats.length) {
+                    throw new Error("vFormats.length !== formats.length");
+                }
+                for (let i = 0; i < vFormats.length; i++) {
+                    if (vFormats[i] !== formats[i]) {
+                        throw new Error("vFormats[i] !== formats[i]");
+                    }
+                }
+
+                if (vNode.getText() === null && domNode.getText() !== "") {
+                    throw new Error(
+                        "vNode.getText() === null && domNode.getText() !== ''"
+                    );
+                }
+
+                if (vNode.getText() && vNode.getText() !== domNode.getText()) {
+                    console.log(vNode.getText(), domNode.getText());
+                    throw new Error("vNode.getText() !== domNode.getText()");
+                }
+            }
+            vDomStack.push(...vNode.getChildren());
+            domStack.push(...domNode.getChildren());
+        }
+        return true;
     }
 }

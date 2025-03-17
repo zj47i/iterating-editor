@@ -21,7 +21,7 @@
         // "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true
     },
-    "include": ["src"],
+    "include": ["src", "src/syncronizer/test/syncronizer.mock.spec.ts"],
     "ts-node": {
         // Tell ts-node CLI to install the --loader automatically
         "esm": true

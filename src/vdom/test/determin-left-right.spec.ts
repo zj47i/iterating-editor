@@ -1,6 +1,6 @@
 import { VDomNode } from "../vdom-node";
-import { mockVdom } from "./vdom.mock";
-import { mockVdom2 } from "./vdom.mock2";
+import { mockVdom } from "./vdom.mock.spec";
+import { mockVdom2 } from "./vdom.mock2.spec";
 
 test("determineLeftRight", () => {
     const vdomNode = mockVdom();

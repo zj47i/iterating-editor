@@ -1,13 +1,13 @@
 import { EditorNode } from "../editor-node.interface";
-import { TextFormat } from "../enum/text-format.enum";
+import { TextFormat } from "../enum/text-format";
 import { VDomNodeType } from "./vdom-node.enum";
 
 export class VDomNode implements EditorNode<VDomNode> {
     public type: VDomNodeType;
     public parent: VDomNode | null;
-    public children: VDomNode[];
+    private children: VDomNode[];
     private text?: string | null;
-    public format?: string[];
+    public format?: TextFormat[];
 
     constructor(type: VDomNodeType) {
         this.type = type;
@@ -19,6 +19,10 @@ export class VDomNode implements EditorNode<VDomNode> {
 
     getParent(): VDomNode {
         return this.parent;
+    }
+
+    getChildren(): VDomNode[] {
+        return this.children;
     }
 
     setFormat(format: TextFormat) {
@@ -35,8 +39,13 @@ export class VDomNode implements EditorNode<VDomNode> {
         this.format.push(format);
     }
 
+    getFormats(): TextFormat[] {
+        return this.format;
+    }
+
     public absorb(other: VDomNode) {
-        for (const child of other.children) {
+        while (other.children.length > 0) {
+            const child = other.children.shift();
             child.parent = null;
             this.append(child);
         }
@@ -271,7 +280,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         return [node1, node2];
     }
 
-    public static findStatesBetween(
+    public static findVDomNodesBetween(
         left: VDomNode,
         right: VDomNode
     ): VDomNode[] {

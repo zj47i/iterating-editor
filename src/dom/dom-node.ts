@@ -1,15 +1,12 @@
 import { EditorNode } from "../editor-node.interface";
-import { TextFormat } from "../enum/text-format.enum";
+import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
-import { VDomNodeType } from "../vdom/vdom-node.enum";
 
 export class DomNode implements EditorNode<DomNode> {
-
     static instances = new WeakMap<HTMLElement, DomNode>();
-    nodeName: string;
+    private nodeName: string;
 
     constructor(private element: HTMLElement) {
-        // 이미 해당 요소에 대한 인스턴스가 존재하면 기존 인스턴스를 반환
         if (DomNode.instances.has(element)) {
             return DomNode.instances.get(element);
         }
@@ -21,14 +18,51 @@ export class DomNode implements EditorNode<DomNode> {
     insertBefore(newDomNode: DomNode, referenceDomNode: DomNode) {
         this.element.insertBefore(newDomNode.element, referenceDomNode.element);
     }
+    getNodeName(): string {
+        return this.nodeName;
+    }
     setFormat(format: TextFormat): void {
         if (format === TextFormat.BOLD) {
             this.element.style.fontWeight = "bold";
             return;
         }
+        if (format === TextFormat.ITALIC) {
+            this.element.style.fontStyle = "italic";
+            return;
+        }
+        if (format === TextFormat.UNDERLINE) {
+            this.element.style.textDecoration = "underline";
+            return;
+        }
+
         this.element.style.fontStyle = format;
     }
+
+    getText(): string {
+        return this.element.textContent;
+    }
+
+    getFormats(): TextFormat[] {
+        const formats: TextFormat[] = [];
+        if (this.element.style.fontWeight === "bold") {
+            formats.push(TextFormat.BOLD);
+        }
+        if (this.element.style.fontStyle === "italic") {
+            formats.push(TextFormat.ITALIC);
+        }
+        if (this.element.style.textDecoration === "underline") {
+            formats.push(TextFormat.UNDERLINE);
+        }
+        return formats;
+    }
+
     append(node: DomNode): void {
+        if (
+            this.element.nodeName === "P" &&
+            this.element.innerHTML === "<br>"
+        ) {
+            this.empty();
+        }
         this.element.appendChild(node.element);
     }
     appendTextNode(textNode: Text): void {
@@ -46,14 +80,16 @@ export class DomNode implements EditorNode<DomNode> {
         return DomNode.fromExistingElement(element);
     }
     getChildren(): DomNode[] {
-        return Array.from(this.element.children).map((child) => {
-            if (!(child instanceof HTMLElement)) {
-                console.error("child is not HTMLElement");
-                return null;
-            }
+        return Array.from(this.element.children)
+            .filter((child) => child.nodeName !== "BR")
+            .map((child) => {
+                if (!(child instanceof HTMLElement)) {
+                    console.error("child is not HTMLElement");
+                    return null;
+                }
 
-            return DomNode.fromExistingElement(child);
-        });
+                return DomNode.fromExistingElement(child);
+            });
     }
     getNextSibling(): DomNode {
         const element = this.element.nextElementSibling;
@@ -84,11 +120,11 @@ export class DomNode implements EditorNode<DomNode> {
         this.element.remove();
     }
 
-    static createParagraph(): DomNode {
+    public static createParagraph(): DomNode {
         return new DomNode(document.createElement("p"));
     }
 
-    static createSpan(textNode?: Text): DomNode {
+    public static createSpan(textNode?: Text): DomNode {
         const span = new DomNode(document.createElement("span"));
         if (textNode) {
             span.appendTextNode(textNode);
@@ -96,7 +132,7 @@ export class DomNode implements EditorNode<DomNode> {
         return span;
     }
 
-    static from(vdomNode: VDomNode): DomNode {
+    public static from(vdomNode: VDomNode): DomNode {
         if (vdomNode.type === "span") {
             return DomNode.createSpan();
         } else if (vdomNode.type === "paragraph") {
@@ -118,12 +154,12 @@ export class DomNode implements EditorNode<DomNode> {
         return DomNode.fromExistingElement(this.element.parentElement);
     }
 
-    absorb(latter: DomNode) {
-        const children = Array.from(latter.element.children);
-        children.forEach((child) => {
-            this.element.appendChild(child);
-        });
-        latter.remove();
+    absorb(other: DomNode) {
+        while (other.getChildren().length > 0) {
+            const child = other.getChildren().shift();
+            this.append(child);
+        }
+        other.remove();
     }
 
     empty() {
@@ -131,6 +167,12 @@ export class DomNode implements EditorNode<DomNode> {
     }
 
     isEmpty() {
+        if (
+            this.element.nodeName === "P" &&
+            this.element.innerHTML === "<br>"
+        ) {
+            return true;
+        }
         return this.element.innerHTML === "";
     }
 }
