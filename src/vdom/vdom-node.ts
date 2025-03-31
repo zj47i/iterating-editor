@@ -83,10 +83,6 @@ export class VDomNode implements EditorNode<VDomNode> {
     }
 
     public getText() {
-        if (this.type !== "span") {
-            console.error("only span node can have text");
-            return;
-        }
         return this.text;
     }
 
@@ -353,5 +349,13 @@ export class VDomNode implements EditorNode<VDomNode> {
         );
 
         nodes.forEach((node) => (node.parent = this.parent));
+    }
+
+    public printTree(depth = 0): void {
+        const indent = " ".repeat(depth * 2);
+        const text = this.getText?.() ?? "";
+        const formats = this.getFormats?.().join(", ") ?? "";
+        console.log(`${indent}${this.type}${text ? `: "${text}"` : ""}${formats ? ` [${formats}]` : ""}`);
+        this.getChildren().forEach(child => child.printTree(depth + 1));
     }
 }

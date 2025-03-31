@@ -15,6 +15,7 @@ export class BackspaceParagraph extends CommandBase {
             vParagraph.getPreviousSibling();
         if (vPreviousParagraph) {
             this.sync.remove(vParagraph);
+            event.preventDefault();
         } else {
             event.preventDefault();
             return;

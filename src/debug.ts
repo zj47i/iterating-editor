@@ -1,3 +1,4 @@
+import { VDomNode } from "./vdom/vdom-node";
 
 const observer = new MutationObserver((mutations) => {
     const elementTextarea = document.getElementById("@element");
@@ -55,3 +56,17 @@ observer.observe(document.getElementById("@editor"), {
     childList: true,
     subtree: true,
 });
+
+export class EditorDebugger {
+    constructor(private editor: any) {}
+
+    printTree() {
+        const vdomRoot = this.getVdomRoot();
+        vdomRoot.printTree();
+    }
+
+    private getVdomRoot(): VDomNode {
+        // private 속성 우회 접근 (임시 디버깅 용도라면 허용 가능)
+        return (this.editor as any)["vdom"];
+    }
+}
