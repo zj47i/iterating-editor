@@ -1,16 +1,19 @@
 import { EditorNode } from "../editor-node.interface";
 import { TextFormat } from "../enum/text-format";
+import { UpdateHash } from "./decorator/update-hash";
 import { VDomNodeType } from "./vdom-node.enum";
+let VDOM_ID_SEQ = 0;
 
 export class VDomNode implements EditorNode<VDomNode> {
-    public type: VDomNodeType;
     public parent: VDomNode | null;
     private children: VDomNode[];
     private text?: string | null;
     public format?: TextFormat[];
+    public hash: string;
 
-    constructor(type: VDomNodeType) {
-        this.type = type;
+    
+    constructor(readonly type: VDomNodeType, readonly id = VDOM_ID_SEQ++) {
+        console.log(this.id);
         this.parent = null;
         this.children = [];
         this.text = null;
@@ -25,6 +28,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         return this.children;
     }
 
+    @UpdateHash()
     setFormat(format: TextFormat) {
         if (this.type !== "span") {
             console.error("only span node can be bold");
@@ -43,6 +47,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         return this.format;
     }
 
+    @UpdateHash()
     public absorb(other: VDomNode) {
         while (other.children.length > 0) {
             const child = other.children.shift();
@@ -52,12 +57,14 @@ export class VDomNode implements EditorNode<VDomNode> {
         other.remove();
     }
 
+    @UpdateHash()
     public empty() {
         while (this.children.length > 0) {
             this.children.shift().remove();
         }
     }
 
+    @UpdateHash()
     public remove() {
         const parent = this.parent;
         if (!parent) {
@@ -69,6 +76,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         this.parent = null;
     }
 
+    @UpdateHash()
     append(node: VDomNode) {
         if (node.parent) {
             console.error("node already has parent. detach first");
@@ -86,6 +94,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         return this.text;
     }
 
+    @UpdateHash()
     public setText(text: string) {
         if (this.type !== "span") {
             console.error("only span node can have text");
@@ -94,6 +103,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         this.text = text;
     }
 
+    @UpdateHash()
     public spliceText(text: string, index = 0) {
         if (this.type !== "span") {
             console.error("only span node can have text");
@@ -335,6 +345,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         return this.parent.children[index + 1];
     }
 
+    @UpdateHash()
     public addNextSiblings(nodes: VDomNode[]) {
         for (const node of nodes) {
             if (node.parent) {
@@ -355,7 +366,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         const indent = " ".repeat(depth * 2);
         const text = this.getText?.() ?? "";
         const formats = this.getFormats?.().join(", ") ?? "";
-        console.log(`${indent}${this.type}${text ? `: "${text}"` : ""}${formats ? ` [${formats}]` : ""}`);
+        console.log(`${indent}${this.type}${text ? `: "${text}"` : ""}${formats ? ` [${formats}]` : ""} - ${this.id} / ${this.hash}`);
         this.getChildren().forEach(child => child.printTree(depth + 1));
     }
 }

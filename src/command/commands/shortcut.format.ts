@@ -1,9 +1,10 @@
-import { DomNode } from "../../../dom/dom-node";
-import { TextFormat } from "../../../enum/text-format";
-import { Synchronizer } from "../../../syncronizer/syncronizer";
-import { VDomNode } from "../../../vdom/vdom-node";
-import { VDomNodeType } from "../../../vdom/vdom-node.enum";
-import { CommandBase } from "../../command.base";
+import { DomNode } from "../../dom/dom-node";
+import { TextFormat } from "../../enum/text-format";
+import { Synchronizer } from "../../syncronizer/syncronizer";
+import { VDomNode } from "../../vdom/vdom-node";
+import { VDomNodeType } from "../../vdom/vdom-node.enum";
+import { CommandBase } from "../command.base";
+import { startEndTextNodes } from "./selection/startend";
 
 export class ShortcutFormat extends CommandBase {
     private constructor(private sync: Synchronizer) {
@@ -12,51 +13,7 @@ export class ShortcutFormat extends CommandBase {
 
     public execute(textFormat: TextFormat, selection: Selection) {
         console.log("ShortcutFormat");
-        let { anchorNode, anchorOffset, focusNode, focusOffset } = selection;
-        let startNode: Node,
-            endNode: Node,
-            startNodeOffset: number,
-            endNodeOffset: number;
-        if (anchorNode.compareDocumentPosition(focusNode) === 0) {
-            if (anchorOffset === focusOffset) {
-                return;
-            }
-            if (anchorOffset < focusOffset) {
-                [startNode, endNode, startNodeOffset, endNodeOffset] = [
-                    anchorNode,
-                    focusNode,
-                    anchorOffset,
-                    focusOffset,
-                ];
-            } else {
-                [startNode, endNode, startNodeOffset, endNodeOffset] = [
-                    focusNode,
-                    anchorNode,
-                    focusOffset,
-                    anchorOffset,
-                ];
-            }
-        } else if (
-            anchorNode.compareDocumentPosition(focusNode) ===
-            Node.DOCUMENT_POSITION_FOLLOWING
-        ) {
-            [startNode, endNode, startNodeOffset, endNodeOffset] = [
-                anchorNode,
-                focusNode,
-                anchorOffset,
-                focusOffset,
-            ];
-        } else if (
-            anchorNode.compareDocumentPosition(focusNode) ===
-            Node.DOCUMENT_POSITION_PRECEDING
-        ) {
-            [startNode, endNode, startNodeOffset, endNodeOffset] = [
-                focusNode,
-                anchorNode,
-                focusOffset,
-                anchorOffset,
-            ];
-        }
+        const { endNode, endNodeOffset, startNode, startNodeOffset } = startEndTextNodes(selection);
 
         const startSpan = DomNode.fromExistingElement(startNode.parentElement);
         const endSpan = DomNode.fromExistingElement(endNode.parentElement);
@@ -98,7 +55,7 @@ export class ShortcutFormat extends CommandBase {
             ).filter((vdomNode) => vdomNode.type === "span");
 
             // vSpans[0]
-            const startText = anchorNode.textContent;
+            const startText = startNode.textContent;
             const startNonSelectedText = startText.slice(0, startNodeOffset);
             const startSelectedText = startText.slice(startNodeOffset);
 
@@ -114,7 +71,7 @@ export class ShortcutFormat extends CommandBase {
             }
 
             // vSpans[n-1]
-            const endText = focusNode.textContent;
+            const endText = endNode.textContent;
             const endSelectedText = endText.slice(0, endNodeOffset);
             const endNonSelectedText = endText.slice(endNodeOffset);
 

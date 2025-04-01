@@ -6,9 +6,10 @@ import { EnterTextNode } from "./commands/enter.text-node";
 import { BackspaceParagraph } from "./commands/backspace.paragraph";
 import { InputParagraph } from "./commands/input.paragraph";
 import { InputTextNode } from "./commands/input.text-node";
-import { ShortcutFormat } from "./commands/shortcut/format";
+import { ShortcutFormat } from "./commands/shortcut.format";
 import { TextFormat } from "../enum/text-format";
 import { BackspaceTextNode } from "./commands/backspace.text-node";
+import { DeleteRange } from "./commands/delete.range";
 
 export class Command {
     constructor(private sync: Synchronizer) {}
@@ -84,6 +85,15 @@ export class Command {
             const selection = document.getSelection();
             shortcutFormat.execute(TextFormat.BOLD, selection);
         }
+
+        if (event.key === CommandKeyboardEvent.DELETE) {
+            event.preventDefault();
+            const selection = getSelection();
+            const deleteRange = DeleteRange.getInstance<DeleteRange>(this.sync);
+            
+            deleteRange.execute(selection);
+        }
+
     }
 
     input(event: InputEvent) {
