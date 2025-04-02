@@ -1,10 +1,29 @@
 import { DomNode } from "../dom/dom-node";
 import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
+import { Hook } from "./decorator/hook";
 
 export class Synchronizer {
-    constructor(private dom: DomNode, private vdom: VDomNode) {}
+    private undoStack: VDomNode[] = [];
+    private redoStack: VDomNode[] = [];
 
+    constructor(private dom: DomNode, private vdom: VDomNode) {
+    }
+
+    private saveCurrentVdom() {
+        this.undoStack.push(this.vdom.deepClone());
+        console.dir(this.undoStack, { depth: null });
+    }
+
+    // public undo() {
+
+    // }
+
+    // public redo() {
+
+    // }
+
+    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public setText(spanVDomNode: VDomNode, text: string, isFromDom = false) {
         if (spanVDomNode.type !== "span") {
             console.error("spanVDomNode.type !== span");

@@ -1,3 +1,4 @@
+import { Editor } from "./editor";
 import { VDomNode } from "./vdom/vdom-node";
 
 const observer = new MutationObserver((mutations) => {
@@ -58,7 +59,14 @@ observer.observe(document.getElementById("@editor"), {
 });
 
 export class EditorDebugger {
-    constructor(private editor: any) {}
+    constructor(private editor: Editor) {
+        document.addEventListener("keydown", (event) => {
+            if (event.ctrlKey && event.key === "d") {
+                event.preventDefault(); // 브라우저 기본 Ctrl+D 동작 방지
+                console.log(this.printTree());
+            }
+        });
+    }
 
     printTree() {
         const vdomRoot = this.getVdomRoot();

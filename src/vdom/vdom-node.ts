@@ -2,22 +2,46 @@ import { EditorNode } from "../editor-node.interface";
 import { TextFormat } from "../enum/text-format";
 import { UpdateHash } from "./decorator/update-hash";
 import { VDomNodeType } from "./vdom-node.enum";
-let VDOM_ID_SEQ = 0;
 
 export class VDomNode implements EditorNode<VDomNode> {
+    static HASH_LOCKED = false;
+    static VDOM_ID_SEQ = 0;
+    static lockHash() {
+        this.HASH_LOCKED = true;
+    }
+    static unlockHash() {
+        this.HASH_LOCKED = false;
+    }
+
     public parent: VDomNode | null;
     private children: VDomNode[];
     private text?: string | null;
     public format?: TextFormat[];
     public hash: string;
 
-    
-    constructor(readonly type: VDomNodeType, readonly id = VDOM_ID_SEQ++) {
-        console.log(this.id);
+    constructor(
+        readonly type: VDomNodeType,
+        readonly id = VDomNode.VDOM_ID_SEQ++
+    ) {
         this.parent = null;
         this.children = [];
         this.text = null;
         this.format = [];
+    }
+
+    deepClone(): VDomNode {
+        VDomNode.lockHash();
+        const clone = new VDomNode(this.type, this.id);
+        clone.text = this.text;
+        clone.format = [...this.format];
+        clone.hash = this.hash;
+
+        for (const child of this.children) {
+            const childClone = child.deepClone();
+            clone.append(childClone);
+        }
+        VDomNode.unlockHash();
+        return clone;
     }
 
     getParent(): VDomNode {
@@ -366,7 +390,11 @@ export class VDomNode implements EditorNode<VDomNode> {
         const indent = " ".repeat(depth * 2);
         const text = this.getText?.() ?? "";
         const formats = this.getFormats?.().join(", ") ?? "";
-        console.log(`${indent}${this.type}${text ? `: "${text}"` : ""}${formats ? ` [${formats}]` : ""} - ${this.id} / ${this.hash}`);
-        this.getChildren().forEach(child => child.printTree(depth + 1));
+        console.log(
+            `${indent}${this.type}${text ? `: "${text}"` : ""}${
+                formats ? ` [${formats}]` : ""
+            } - ${this.id} / ${this.hash}`
+        );
+        this.getChildren().forEach((child) => child.printTree(depth + 1));
     }
 }

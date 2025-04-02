@@ -5,14 +5,9 @@ import { Synchronizer } from "./syncronizer/syncronizer";
 import { DomNode } from "./dom/dom-node";
 
 export class Editor {
-    private vdom: VDomNode;
-    private sync: Synchronizer;
     private command: Command;
 
-    constructor(private dom: DomNode) {
-        this.dom.getElement().contentEditable = "true";
-        this.vdom = VDomNode.createRootNode();
-        this.sync = new Synchronizer(dom, this.vdom);
+    constructor(private dom: DomNode, private vdom: VDomNode, private sync: Synchronizer) {
 
         this.sync.appendNewVDomNode(
             this.vdom,
