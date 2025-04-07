@@ -15,17 +15,19 @@ export class DomNode implements EditorNode<DomNode> {
         DomNode.instances.set(element, this);
     }
 
-    insertBefore(newDomNode: DomNode, referenceDomNode: DomNode) {
+    private insertBefore(newDomNode: DomNode, referenceDomNode: DomNode) {
         if (!referenceDomNode) {
             this.element.insertBefore(newDomNode.element, undefined);
             return;
         }
         this.element.insertBefore(newDomNode.element, referenceDomNode.element);
     }
-    getNodeName(): string {
+    
+    public getNodeName(): string {
         return this.nodeName;
     }
-    setFormat(format: TextFormat): void {
+    
+    public setFormat(format: TextFormat): void {
         if (format === TextFormat.BOLD) {
             this.element.style.fontWeight = "bold";
             return;
@@ -42,11 +44,11 @@ export class DomNode implements EditorNode<DomNode> {
         this.element.style.fontStyle = format;
     }
 
-    getText(): string {
+    public getText(): string {
         return this.element.textContent;
     }
 
-    getFormats(): TextFormat[] {
+    public getFormats(): TextFormat[] {
         const formats: TextFormat[] = [];
         if (this.element.style.fontWeight === "bold") {
             formats.push(TextFormat.BOLD);
@@ -60,7 +62,7 @@ export class DomNode implements EditorNode<DomNode> {
         return formats;
     }
 
-    attach(node: DomNode, at: number): void {
+    public attach(node: DomNode, at: number): void {
         if (
             this.element.nodeName === "P" &&
             this.element.innerHTML === "<br>"
@@ -71,13 +73,14 @@ export class DomNode implements EditorNode<DomNode> {
         this.insertBefore(node, currentChild);
     }
 
-    attachLast(node: DomNode): void {
+    public attachLast(node: DomNode): void {
         this.attach(node, this.getChildren().length);
     }
 
-    appendTextNode(textNode: Text): void {
+    private appendTextNode(textNode: Text): void {
         this.element.appendChild(textNode);
     }
+    
     getPreviousSibling(): DomNode {
         const element = this.element.previousElementSibling;
         if (!element) {
@@ -127,6 +130,10 @@ export class DomNode implements EditorNode<DomNode> {
     }
 
     detach(node: DomNode): DomNode {
+        const at = this.getChildren().indexOf(node);
+        if (at === -1) {
+            console.error("node is not child")
+        }
         node.element.remove();
         return node;
     }
