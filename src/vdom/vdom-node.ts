@@ -1,9 +1,10 @@
-import { EditorNode } from "../editor-node.interface";
+import { EditorNode } from "../interface/editor-node.interface";
 import { TextFormat } from "../enum/text-format";
+import { Equatable } from "../interface/equatable.interface";
 import { UpdateHash } from "./decorator/update-hash";
 import { VDomNodeType } from "./vdom-node.enum";
 
-export class VDomNode implements EditorNode<VDomNode> {
+export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     static HASH_LOCKED = false;
     static VDOM_ID_SEQ = 0;
     static lockHash() {
@@ -27,6 +28,10 @@ export class VDomNode implements EditorNode<VDomNode> {
         this.children = [];
         this.text = null;
         this.format = [];
+    }
+
+    public isEqual(other: VDomNode): boolean {
+        return this.hash === other.hash;
     }
 
     deepClone(): VDomNode {
@@ -65,6 +70,7 @@ export class VDomNode implements EditorNode<VDomNode> {
             return;
         }
         this.format.push(format);
+        this.format.sort();
     }
 
     getFormats(): TextFormat[] {

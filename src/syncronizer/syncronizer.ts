@@ -1,23 +1,76 @@
 import { DomNode } from "../dom/dom-node";
 import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
+import { editScript } from "./algorithm/edit-script";
+import { LCS } from "./algorithm/lcs";
 import { Hook } from "./decorator/hook";
+import _ from "lodash";
 
 export class Synchronizer {
     private undoStack: VDomNode[] = [];
     private redoStack: VDomNode[] = [];
 
-    constructor(private dom: DomNode, private vdom: VDomNode) {
-    }
+    constructor(private dom: DomNode, private vdom: VDomNode) {}
 
     private saveCurrentVdom() {
         this.undoStack.push(this.vdom.deepClone());
-        console.dir(this.undoStack, { depth: null });
     }
 
-    // public undo() {
+    private replaceVDom(currentVdom: VDomNode, newVdom: VDomNode) {
+        const stack: VDomNode[][] = [[currentVdom, newVdom]];
+        while (stack.length > 0) {
+            const [currentVdomNode, newVdomNode] = stack.pop();
+            if (currentVdomNode.hash === newVdomNode.hash) return;
+            if (currentVdomNode.getText() !== newVdomNode.getText()) {
+                this.setText(currentVdomNode, newVdomNode.getText());
+            }
+            if (
+                !_.isEqual(
+                    currentVdomNode.getFormats(),
+                    newVdomNode.getFormats()
+                )
+            ) {
+                for (const format of newVdomNode.getFormats()) {
+                    this.format(currentVdomNode, format);
+                }
+            }
 
-    // }
+            const lcs = LCS(
+                currentVdomNode.getChildren(),
+                newVdomNode.getChildren()
+            );
+            const es = editScript(
+                currentVdomNode.getChildren(),
+                newVdomNode.getChildren(),
+                lcs
+            );
+            for (const s of es) {
+                if (s.edit === "insert") {
+                    this.insertSubVDom(currentVdomNode, s.at, s.vnode);
+                } else if (s.edit === "delete") {
+                    this.removeChild(currentVdomNode, s.at);
+                } else {
+                }
+            }
+        }
+    }
+
+    insertSubVDom(vdom: VDomNode, at: number, subDom: VDomNode) {
+        const domNode = this.findDomNodeFrom(vdom);
+        if (!domNode) {
+            console.error("domNode is undefined");
+            return;
+        }
+        const newDomNode = DomNode.from(subDom);
+    }
+
+    public undo() {
+        if (this.undoStack.length === 0) return;
+        const lastVdom = this.undoStack.pop();
+        this.redoStack.push(this.vdom.deepClone());
+        this.replaceVDom(this.vdom, lastVdom);
+        this.vdom = lastVdom;
+    }
 
     // public redo() {
 
@@ -37,12 +90,14 @@ export class Synchronizer {
         span.getElement().textContent = text;
     }
 
+    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public format(vSpan: VDomNode, textFormat: TextFormat) {
         const span = this.findDomNodeFrom(vSpan);
         vSpan.setFormat(textFormat);
         span.setFormat(textFormat);
     }
 
+    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public merge(vParagraph1: VDomNode, vParagraph2: VDomNode) {
         const paragraph1 = this.findDomNodeFrom(vParagraph1);
         const paragraph2 = this.findDomNodeFrom(vParagraph2);
@@ -57,6 +112,7 @@ export class Synchronizer {
         paragraph1.absorb(paragraph2);
     }
 
+    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewVDomNode(vParent: VDomNode, vChild: VDomNode) {
         const parent = this.findDomNodeFrom(vParent);
         const child = DomNode.from(vChild);
@@ -64,6 +120,7 @@ export class Synchronizer {
         parent.append(child);
     }
 
+    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewDomNode(parent: DomNode, child: DomNode) {
         const vParent = this.findVDomNodeFrom(parent);
         const vChild = VDomNode.from(child.getElement());
@@ -71,6 +128,7 @@ export class Synchronizer {
         parent.append(child);
     }
 
+    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public remove(vdomNode: VDomNode) {
         const domNode = this.findDomNodeFrom(vdomNode);
         const parent = domNode.getParent();
@@ -81,6 +139,7 @@ export class Synchronizer {
         }
     }
 
+    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public addNewNextSiblings(vdomNode: VDomNode, siblings: VDomNode[]) {
         const domNode = this.findDomNodeFrom(vdomNode);
         vdomNode.addNextSiblings(siblings);

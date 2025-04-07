@@ -1,4 +1,4 @@
-import { EditorNode } from "../editor-node.interface";
+import { EditorNode } from "../interface/editor-node.interface";
 import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
 

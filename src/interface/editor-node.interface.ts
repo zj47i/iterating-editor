@@ -1,4 +1,4 @@
-import { TextFormat } from "./enum/text-format";
+import { TextFormat } from "../enum/text-format";
 
 export interface EditorNode<T> {
     getChildren(): T[];
