@@ -116,16 +116,16 @@ export class Synchronizer {
     public appendNewVDomNode(vParent: VDomNode, vChild: VDomNode) {
         const parent = this.findDomNodeFrom(vParent);
         const child = DomNode.from(vChild);
-        vParent.append(vChild);
-        parent.append(child);
+        vParent.attachLast(vChild);
+        parent.attachLast(child);
     }
 
     @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewDomNode(parent: DomNode, child: DomNode) {
         const vParent = this.findVDomNodeFrom(parent);
         const vChild = VDomNode.from(child.getElement());
-        vParent.append(vChild);
-        parent.append(child);
+        vParent.attachLast(vChild);
+        parent.attachLast(child);
     }
 
     @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)

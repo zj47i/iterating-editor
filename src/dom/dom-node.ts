@@ -16,6 +16,10 @@ export class DomNode implements EditorNode<DomNode> {
     }
 
     insertBefore(newDomNode: DomNode, referenceDomNode: DomNode) {
+        if (!referenceDomNode) {
+            this.element.insertBefore(newDomNode.element, undefined);
+            return;
+        }
         this.element.insertBefore(newDomNode.element, referenceDomNode.element);
     }
     getNodeName(): string {
@@ -56,15 +60,25 @@ export class DomNode implements EditorNode<DomNode> {
         return formats;
     }
 
-    append(node: DomNode): void {
+    attach(node: DomNode, at: number): void {
         if (
             this.element.nodeName === "P" &&
             this.element.innerHTML === "<br>"
         ) {
             this.empty();
         }
-        this.element.appendChild(node.element);
+        const currentChild = this.getChildren()[at];
+        this.insertBefore(node, currentChild);
     }
+    
+    detach(node: DomNode): DomNode {
+        return 
+    }
+
+    attachLast(node: DomNode): void {
+        this.attach(node, this.getChildren().length);
+    }
+
     appendTextNode(textNode: Text): void {
         this.element.appendChild(textNode);
     }
@@ -157,7 +171,7 @@ export class DomNode implements EditorNode<DomNode> {
     absorb(other: DomNode) {
         while (other.getChildren().length > 0) {
             const child = other.getChildren().shift();
-            this.append(child);
+            this.attachLast(child);
         }
         other.remove();
     }

@@ -7,7 +7,9 @@ export interface EditorNode<T> {
     absorb(other: T): void;
     empty(): void;
     remove(): void;
-    append(node: T): void;
+    attachLast(node: T): void;
+    attach(node: T, at: number): void;
+    detach(node: T): T;
     isEmpty(): boolean;
     getPreviousSibling(): T | undefined;
     getNextSibling(): T | undefined;
