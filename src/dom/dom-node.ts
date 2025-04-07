@@ -3,8 +3,39 @@ import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
 
 export class DomNode implements EditorNode<DomNode> {
-    static instances = new WeakMap<HTMLElement, DomNode>();
     private nodeName: string;
+
+    static instances = new WeakMap<HTMLElement, DomNode>();
+
+    static fromExistingElement(element: HTMLElement): DomNode {
+        if (DomNode.instances.has(element)) {
+            return DomNode.instances.get(element);
+        }
+        console.error("element is not registered");
+    }
+
+    public static createParagraph(): DomNode {
+        return new DomNode(document.createElement("p"));
+    }
+
+    public static createSpan(textNode?: Text): DomNode {
+        const span = new DomNode(document.createElement("span"));
+        if (textNode) {
+            span.appendTextNode(textNode);
+        }
+        return span;
+    }
+
+    public static from(vdomNode: VDomNode): DomNode {
+        if (vdomNode.type === "span") {
+            return DomNode.createSpan();
+        } else if (vdomNode.type === "paragraph") {
+            const paragraph = DomNode.createParagraph();
+            paragraph.getElement().innerHTML = "<br>";
+            return paragraph;
+        }
+        console.error("unknown type: ", vdomNode.type);
+    }
 
     constructor(private element: HTMLElement) {
         if (DomNode.instances.has(element)) {
@@ -22,11 +53,15 @@ export class DomNode implements EditorNode<DomNode> {
         }
         this.element.insertBefore(newDomNode.element, referenceDomNode.element);
     }
-    
+
+    private appendTextNode(textNode: Text): void {
+        this.element.appendChild(textNode);
+    }
+
     public getNodeName(): string {
         return this.nodeName;
     }
-    
+
     public setFormat(format: TextFormat): void {
         if (format === TextFormat.BOLD) {
             this.element.style.fontWeight = "bold";
@@ -63,6 +98,10 @@ export class DomNode implements EditorNode<DomNode> {
     }
 
     public attach(node: DomNode, at: number): void {
+        if (node.getElement().parentElement) {
+            console.error("node is already attached");
+            return;
+        }
         if (
             this.element.nodeName === "P" &&
             this.element.innerHTML === "<br>"
@@ -77,11 +116,16 @@ export class DomNode implements EditorNode<DomNode> {
         this.attach(node, this.getChildren().length);
     }
 
-    private appendTextNode(textNode: Text): void {
-        this.element.appendChild(textNode);
+    public detach(node: DomNode): DomNode {
+        const at = this.getChildren().indexOf(node);
+        if (at === -1) {
+            console.error("node is not child");
+        }
+        node.element.remove();
+        return node;
     }
-    
-    getPreviousSibling(): DomNode {
+
+    public getPreviousSibling(): DomNode {
         const element = this.element.previousElementSibling;
         if (!element) {
             return null;
@@ -92,7 +136,8 @@ export class DomNode implements EditorNode<DomNode> {
         }
         return DomNode.fromExistingElement(element);
     }
-    getChildren(): DomNode[] {
+
+    public getChildren(): DomNode[] {
         return Array.from(this.element.children)
             .filter((child) => child.nodeName !== "BR")
             .map((child) => {
@@ -104,7 +149,8 @@ export class DomNode implements EditorNode<DomNode> {
                 return DomNode.fromExistingElement(child);
             });
     }
-    getNextSibling(): DomNode {
+
+    public getNextSibling(): DomNode {
         const element = this.element.nextElementSibling;
         if (!element) {
             return null;
@@ -115,7 +161,8 @@ export class DomNode implements EditorNode<DomNode> {
         }
         return DomNode.fromExistingElement(element);
     }
-    addNextSiblings(siblings: DomNode[]): void {
+
+    public addNextSiblings(siblings: DomNode[]): void {
         const parentElement = this.element.parentElement;
         let target = this.element;
         siblings.forEach((sibling) => {
@@ -129,63 +176,24 @@ export class DomNode implements EditorNode<DomNode> {
         return this.element;
     }
 
-    detach(node: DomNode): DomNode {
-        const at = this.getChildren().indexOf(node);
-        if (at === -1) {
-            console.error("node is not child")
-        }
-        node.element.remove();
-        return node;
-    }
-
-    public static createParagraph(): DomNode {
-        return new DomNode(document.createElement("p"));
-    }
-
-    public static createSpan(textNode?: Text): DomNode {
-        const span = new DomNode(document.createElement("span"));
-        if (textNode) {
-            span.appendTextNode(textNode);
-        }
-        return span;
-    }
-
-    public static from(vdomNode: VDomNode): DomNode {
-        if (vdomNode.type === "span") {
-            return DomNode.createSpan();
-        } else if (vdomNode.type === "paragraph") {
-            const paragraph = DomNode.createParagraph();
-            paragraph.getElement().innerHTML = "<br>";
-            return paragraph;
-        }
-        console.error("unknown type: ", vdomNode.type);
-    }
-
-    static fromExistingElement(element: HTMLElement): DomNode {
-        if (DomNode.instances.has(element)) {
-            return DomNode.instances.get(element);
-        }
-        console.error("element is not registered", element.outerHTML);
-    }
-
-    getParent(): DomNode {
+    public getParent(): DomNode {
         return DomNode.fromExistingElement(this.element.parentElement);
     }
 
-    absorb(other: DomNode) {
+    public absorb(other: DomNode) {
         while (other.getChildren().length > 0) {
-            const child = other.getChildren().shift();
+            const child = other.detach(other.getChildren()[0]);
             this.attachLast(child);
         }
-        const parent = other.getParent();
-        parent.detach(other);
+        const otherParent = other.getParent();
+        otherParent.detach(other);
     }
 
-    empty() {
+    public empty() {
         this.element.innerHTML = "";
     }
 
-    isEmpty() {
+    public isEmpty() {
         if (
             this.element.nodeName === "P" &&
             this.element.innerHTML === "<br>"

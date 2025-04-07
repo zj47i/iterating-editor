@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { DomNode } from "../dom-node";
 
-test("attachLast", () => {
+test("addNextSiblings", () => {
     const paragraph = DomNode.createParagraph();
     const spans = [
         DomNode.createSpan(document.createTextNode("span0")),
@@ -16,11 +16,15 @@ test("attachLast", () => {
         paragraph.attachLast(s);
     });
 
+    spans[0].addNextSiblings([
+        DomNode.createSpan(document.createTextNode("1")),
+        DomNode.createSpan(document.createTextNode("2")),
+        DomNode.createSpan(document.createTextNode("3")),
+    ]);
+
     const children = paragraph.getChildren();
-    expect(children[0]).toEqual(spans[0]);
-    expect(children[1]).toEqual(spans[1]);
-    expect(children[2]).toEqual(spans[2]);
-    expect(children[3]).toEqual(spans[3]);
-    expect(children[4]).toEqual(spans[4]);
-    expect(children[5]).toEqual(spans[5]);
+    expect(children[0].getText()).toEqual("span0");
+    expect(children[1].getText()).toEqual("1");
+    expect(children[2].getText()).toEqual("2");
+    expect(children[3].getText()).toEqual("3");
 });
