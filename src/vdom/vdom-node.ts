@@ -84,15 +84,10 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
             child.parent = null;
             this.attachLast(child);
         }
-        other.remove();
+        const otherParent = other.parent;
+        otherParent.detach(other);
     }
 
-    @UpdateHash()
-    public empty() {
-        while (this.children.length > 0) {
-            this.children.shift().remove();
-        }
-    }
 
     @UpdateHash()
     public remove() {
@@ -104,6 +99,13 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         const index = parent.children.indexOf(this);
         parent.children.splice(index, 1);
         this.parent = null;
+    }
+
+    @UpdateHash()
+    public empty() {
+        while (this.children.length > 0) {
+            this.detach(this.getChildren()[0])
+        }
     }
 
     attachLast(node: VDomNode) {
@@ -125,7 +127,9 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
             console.error("node is not child")
             return;
         }
-        return node;
+        const detached = this.getChildren().splice(at, 1)[0];
+        detached.parent = null;
+        return detached;
     }
 
     isEmpty() {

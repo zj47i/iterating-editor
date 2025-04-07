@@ -12,8 +12,9 @@ test("remove", () => {
   `;
 
     const p = document.getElementById("target");
+    const parent = new DomNode(p.parentElement);
     const domNode = new DomNode(p);
-    domNode.remove();
+    parent.detach(domNode);
 
     expect(document.body).toHaveTextContent("stay");
     expect(document.body).not.toHaveTextContent("remove");

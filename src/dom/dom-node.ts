@@ -70,10 +70,6 @@ export class DomNode implements EditorNode<DomNode> {
         const currentChild = this.getChildren()[at];
         this.insertBefore(node, currentChild);
     }
-    
-    detach(node: DomNode): DomNode {
-        return 
-    }
 
     attachLast(node: DomNode): void {
         this.attach(node, this.getChildren().length);
@@ -130,8 +126,9 @@ export class DomNode implements EditorNode<DomNode> {
         return this.element;
     }
 
-    remove() {
-        this.element.remove();
+    detach(node: DomNode): DomNode {
+        node.element.remove();
+        return node;
     }
 
     public static createParagraph(): DomNode {
@@ -173,7 +170,8 @@ export class DomNode implements EditorNode<DomNode> {
             const child = other.getChildren().shift();
             this.attachLast(child);
         }
-        other.remove();
+        const parent = other.getParent();
+        parent.detach(other);
     }
 
     empty() {

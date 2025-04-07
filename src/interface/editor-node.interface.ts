@@ -6,7 +6,6 @@ export interface EditorNode<T> {
     getFormats(): TextFormat[];
     absorb(other: T): void;
     empty(): void;
-    remove(): void;
     attachLast(node: T): void;
     attach(node: T, at: number): void;
     detach(node: T): T;

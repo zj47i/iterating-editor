@@ -132,8 +132,9 @@ export class Synchronizer {
     public remove(vdomNode: VDomNode) {
         const domNode = this.findDomNodeFrom(vdomNode);
         const parent = domNode.getParent();
-        vdomNode.remove();
-        domNode.remove();
+        const vParent = vdomNode.parent;
+        vParent.detach(vdomNode);
+        parent.detach(domNode);
         if (parent && parent.getNodeName() === "P" && parent.isEmpty()) {
             parent.getElement().innerHTML = "<br>";
         }
