@@ -188,6 +188,7 @@ export class Synchronizer {
         const path: number[] = [];
         while (vdomNode.type !== "root") {
             if (!vdomNode.parent) {
+                console.log(vdomNode)
                 console.error("vdomNode.parent is undefined");
                 return [];
             }

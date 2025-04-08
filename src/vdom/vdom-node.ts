@@ -120,6 +120,9 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         }
         this.getChildren().splice(at, 0, node);
         node.parent = this;
+        console.error("asdasdad")
+        console.log(node);
+        console.log(this);
     }
 
     detach(node: VDomNode) {
