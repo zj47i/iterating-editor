@@ -16,65 +16,72 @@ export class Synchronizer {
         this.undoStack.push(this.vdom.deepClone());
     }
 
-    // private replaceVDom(currentVdom: VDomNode, newVdom: VDomNode) {
-    //     const stack: VDomNode[][] = [[currentVdom, newVdom]];
-    //     while (stack.length > 0) {
-    //         const [currentVdomNode, newVdomNode] = stack.pop();
-    //         if (currentVdomNode.hash === newVdomNode.hash) return;
-    //         if (currentVdomNode.getText() !== newVdomNode.getText()) {
-    //             this.setText(currentVdomNode, newVdomNode.getText());
-    //         }
-    //         if (
-    //             !_.isEqual(
-    //                 currentVdomNode.getFormats(),
-    //                 newVdomNode.getFormats()
-    //             )
-    //         ) {
-    //             for (const format of newVdomNode.getFormats()) {
-    //                 this.format(currentVdomNode, format);
-    //             }
-    //         }
+    private replaceVDom(currentVdom: VDomNode, newVdom: VDomNode) {
+        const stack: VDomNode[][] = [[currentVdom, newVdom]];
+        while (stack.length > 0) {
+            const [currentVdomNode, newVdomNode] = stack.pop();
+            if (currentVdomNode.hash === newVdomNode.hash) return;
+            if (currentVdomNode.getText() !== newVdomNode.getText()) {
+                this.setText(currentVdomNode, newVdomNode.getText());
+            }
+            if (
+                !_.isEqual(
+                    currentVdomNode.getFormats(),
+                    newVdomNode.getFormats()
+                )
+            ) {
+                for (const format of newVdomNode.getFormats()) {
+                    this.format(currentVdomNode, format);
+                }
+            }
 
-    //         const lcs = LCS(
-    //             currentVdomNode.getChildren(),
-    //             newVdomNode.getChildren()
-    //         );
-    //         const es = editScript(
-    //             currentVdomNode.getChildren(),
-    //             newVdomNode.getChildren(),
-    //             lcs
-    //         );
-    //         for (const s of es) {
-    //             if (s.edit === "insert") {
-    //                 this.insertSubVDom(currentVdomNode, s.at, s.vnode);
-    //             } else if (s.edit === "delete") {
-    //                 this.removeChild(currentVdomNode, s.at);
-    //             } else {
-    //             }
-    //         }
-    //     }
-    // }
+            const lcs = LCS(
+                currentVdomNode.getChildren(),
+                newVdomNode.getChildren()
+            );
+            const es = editScript(
+                currentVdomNode.getChildren(),
+                newVdomNode.getChildren(),
+                lcs
+            );
+            for (const s of es) {
+                if (s.edit === "insert") {
+                    this.attachSubVdom(
+                        currentVdomNode,
+                        s.at,
+                        s.vnode.deepClone()
+                    );
+                } else if (s.edit === "delete") {
+                    this.detachSubVdom(currentVdomNode, s.at);
+                } else {
+                }
+            }
+        }
+    }
 
-    // insertSubVDom(vdom: VDomNode, at: number, subDom: VDomNode) {
-    //     const domNode = this.findDomNodeFrom(vdom);
-    //     if (!domNode) {
-    //         console.error("domNode is undefined");
-    //         return;
-    //     }
-    //     const newDomNode = DomNode.from(subDom);
-    // }
+    detachSubVdom(vdom: VDomNode, at: number) {
+        this.
+    }
 
-    // public undo() {
-    //     if (this.undoStack.length === 0) return;
-    //     const lastVdom = this.undoStack.pop();
-    //     this.redoStack.push(this.vdom.deepClone());
-    //     this.replaceVDom(this.vdom, lastVdom);
-    //     this.vdom = lastVdom;
-    // }
+    attachSubVdom(vdomNode: VDomNode, at: number, subDom: VDomNode) {
+        const domNode = this.findDomNodeFrom(vdomNode);
+        if (!domNode) {
+            console.error("domNode is undefined");
+            return;
+        }
+        vdomNode.attach(subDom, at);
+        domNode.attach(DomNode.from(subDom), at);
+    }
 
-    // public redo() {
+    public undo() {
+        if (this.undoStack.length === 0) return;
+        const lastVdom = this.undoStack.pop();
+        this.redoStack.push(this.vdom.deepClone());
+        this.replaceVDom(this.vdom, lastVdom);
+        this.vdom = lastVdom;
+    }
 
-    // }
+    public redo() {}
 
     @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public setText(spanVDomNode: VDomNode, text: string, isFromDom = false) {
