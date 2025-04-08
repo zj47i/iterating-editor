@@ -10,6 +10,7 @@ import { ShortcutFormat } from "./commands/shortcut.format";
 import { TextFormat } from "../enum/text-format";
 import { BackspaceTextNode } from "./commands/backspace.text-node";
 import { DeleteRange } from "./commands/delete.range";
+import { ShortcutUndo } from "./commands/shortcut.undo";
 
 export class Command {
     constructor(private sync: Synchronizer) {}
@@ -86,14 +87,22 @@ export class Command {
             shortcutFormat.execute(TextFormat.BOLD, selection);
         }
 
+        // if ((event.key === "z" || event.key === "Z") && event.ctrlKey) {
+        //     const shortcutUndo = ShortcutUndo.getInstance<ShortcutUndo>(
+        //         this.sync
+        //     );
+        //     event.preventDefault();
+        //     const selection = document.getSelection();
+        //     shortcutUndo.execute(selection);
+        // }
+
         if (event.key === CommandKeyboardEvent.DELETE) {
             event.preventDefault();
             const selection = getSelection();
             const deleteRange = DeleteRange.getInstance<DeleteRange>(this.sync);
-            
+
             deleteRange.execute(selection);
         }
-
     }
 
     input(event: InputEvent) {

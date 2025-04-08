@@ -17,60 +17,70 @@ export class Synchronizer {
     }
 
     private replaceVDom(currentVdom: VDomNode, newVdom: VDomNode) {
-        const stack: VDomNode[][] = [[currentVdom, newVdom]];
+        const stack: [VDomNode, VDomNode][] = [[currentVdom, newVdom]];
+
         while (stack.length > 0) {
-            const [currentVdomNode, newVdomNode] = stack.pop();
-            if (currentVdomNode.hash === newVdomNode.hash) return;
-            if (currentVdomNode.getText() !== newVdomNode.getText()) {
-                this.setText(currentVdomNode, newVdomNode.getText());
+            const [currentNode, newNode] = stack.pop();
+
+            if (currentNode.hash === newNode.hash) continue;
+
+            if (currentNode.getText() !== newNode.getText()) {
+                this.setText(currentNode, newNode.getText());
             }
-            if (
-                !_.isEqual(
-                    currentVdomNode.getFormats(),
-                    newVdomNode.getFormats()
-                )
-            ) {
-                for (const format of newVdomNode.getFormats()) {
-                    this.format(currentVdomNode, format);
+
+            if (!_.isEqual(currentNode.getFormats(), newNode.getFormats())) {
+                for (const format of newNode.getFormats()) {
+                    this.format(currentNode, format);
                 }
             }
 
-            const lcs = LCS(
-                currentVdomNode.getChildren(),
-                newVdomNode.getChildren()
-            );
-            const es = editScript(
-                currentVdomNode.getChildren(),
-                newVdomNode.getChildren(),
-                lcs
-            );
-            for (const s of es) {
-                if (s.edit === "insert") {
+            const oldChildren = currentNode.getChildren();
+            const newChildren = newNode.getChildren();
+            const lcs = LCS(oldChildren, newChildren); // returns list of [oldIdx, newIdx]
+            // index pair 구하기
+            const lcsIndexPairs: [number, number][] = [];
+            let oldIdx = 0;
+            let newIdx = 0;
+            for (const node of lcs) {
+                while (!oldChildren[oldIdx].isEqual(node)) oldIdx++;
+                while (!newChildren[newIdx].isEqual(node)) newIdx++;
+                lcsIndexPairs.push([oldIdx, newIdx]);
+                oldIdx++;
+                newIdx++;
+            }
+            const edits = editScript(oldChildren, newChildren, lcs);
+
+            for (const op of edits) {
+                if (op.edit === "insert") {
                     this.attachSubVdom(
-                        currentVdomNode,
-                        s.at,
-                        s.vnode.deepClone()
+                        currentNode,
+                        op.at,
+                        op.vnode.deepClone()
                     );
-                } else if (s.edit === "delete") {
-                    this.detachSubVdom(currentVdomNode, s.at);
-                } else {
+                } else if (op.edit === "delete") {
+                    this.detachVdom(currentNode, op.vnode); // should update hash internally
                 }
+            }
+
+            // 재귀 비교 stack에 push
+            for (const [aIdx, bIdx] of lcsIndexPairs) {
+                stack.push([oldChildren[aIdx], newChildren[bIdx]]);
             }
         }
     }
 
-    detachSubVdom(vdom: VDomNode, at: number) {
-        this.
+    detachVdom(vdomNode: VDomNode, target: VDomNode) {
+        const domNode = this.findDomNodeFrom(vdomNode);
+        const targetDomNode = this.findDomNodeFrom(target);
+        vdomNode.detach(target);
+        domNode.detach(targetDomNode);
     }
 
-    attachSubVdom(vdomNode: VDomNode, at: number, subDom: VDomNode) {
+    attachSubVdom(vdomNode: VDomNode, at: number, subVdom: VDomNode) {
         const domNode = this.findDomNodeFrom(vdomNode);
-        if (!domNode) {
-            console.error("domNode is undefined");
-            return;
-        }
-        vdomNode.attach(subDom, at);
-        domNode.attach(DomNode.from(subDom), at);
+        const subDom = DomNode.fromVdom(subVdom);
+        vdomNode.attach(subVdom, at);
+        domNode.attach(subDom, at);
     }
 
     public undo() {

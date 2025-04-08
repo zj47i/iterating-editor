@@ -37,6 +37,28 @@ export class DomNode implements EditorNode<DomNode> {
         console.error("unknown type: ", vdomNode.type);
     }
 
+    public static fromVdom(vdomRoot: VDomNode): DomNode {
+        const domRoot = DomNode.from(vdomRoot);
+        const nodeMap = new Map<number, DomNode>();
+        nodeMap.set(vdomRoot.id, domRoot);
+
+        const stack: VDomNode[] = [vdomRoot];
+
+        while (stack.length > 0) {
+            const currentV = stack.pop()!;
+            const currentD = nodeMap.get(currentV.id)!;
+
+            for (const childV of currentV.getChildren()) {
+                const childD = DomNode.from(childV);
+                currentD.attachLast(childD);
+                nodeMap.set(childV.id, childD);
+                stack.push(childV);
+            }
+        }
+
+        return domRoot;
+    }
+
     constructor(private element: HTMLElement) {
         if (DomNode.instances.has(element)) {
             return DomNode.instances.get(element);
@@ -122,6 +144,11 @@ export class DomNode implements EditorNode<DomNode> {
             console.error("node is not child");
         }
         node.element.remove();
+        if (this.element.nodeName === "P") {
+            if (this.element.innerHTML === "") {
+                this.element.innerHTML = "<br>";
+            }
+        }
         return node;
     }
 
