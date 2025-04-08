@@ -127,6 +127,7 @@ export class Synchronizer {
         }
         vParagraph1.absorb(vParagraph2);
         paragraph1.absorb(paragraph2);
+        
     }
 
     @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
@@ -188,7 +189,7 @@ export class Synchronizer {
         const path: number[] = [];
         while (vdomNode.type !== "root") {
             if (!vdomNode.parent) {
-                console.log(vdomNode)
+                console.log(vdomNode);
                 console.error("vdomNode.parent is undefined");
                 return [];
             }

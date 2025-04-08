@@ -12,7 +12,7 @@ export class ShortcutFormat extends CommandBase {
     }
 
     public execute(textFormat: TextFormat, selection: Selection) {
-        console.log("ShortcutFormat");
+        console.log("ShortcutFormat$");
         const { endNode, endNodeOffset, startNode, startNodeOffset } = startEndTextNodes(selection);
 
         const startSpan = DomNode.fromExistingElement(startNode.parentElement);

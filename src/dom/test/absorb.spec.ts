@@ -49,8 +49,5 @@ test("absorb", () => {
     expect(spanY.getChildren()).toEqual([span1, span2, span3, span4]);
     expect(spanZ.getChildren()).toEqual([]);
     expect(spanY.getParent()).toEqual(spanX);
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
-    
-    spanZ.getParent();
-    expect(consoleSpy).toHaveBeenCalledWith("element is not registered");
+    expect(spanZ.getParent()).toEqual(null);
 });

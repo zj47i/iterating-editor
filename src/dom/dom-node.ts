@@ -144,10 +144,8 @@ export class DomNode implements EditorNode<DomNode> {
             console.error("node is not child");
         }
         node.element.remove();
-        if (this.element.nodeName === "P") {
-            if (this.element.innerHTML === "") {
-                this.element.innerHTML = "<br>";
-            }
+        if (this.isEmpty()) {
+            this.element.innerHTML = "<br>";
         }
         return node;
     }
@@ -204,12 +202,15 @@ export class DomNode implements EditorNode<DomNode> {
     }
 
     public getParent(): DomNode {
+        if (this.element.parentElement === null) {
+            return null;
+        }
         return DomNode.fromExistingElement(this.element.parentElement);
     }
 
     public absorb(other: DomNode) {
-        while (other.getChildren().length > 0) {
-            const child = other.detach(other.getChildren()[0]);
+        for (const child of other.getChildren()) {
+            other.detach(child);
             this.attachLast(child);
         }
         const otherParent = other.getParent();
