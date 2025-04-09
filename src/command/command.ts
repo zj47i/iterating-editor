@@ -61,6 +61,12 @@ export class Command {
                     event
                 );
             }
+            if (selection.anchorNode.nodeType === Node.TEXT_NODE &&
+                selection.anchorOffset === 1
+            ) {
+                event.preventDefault();
+                console.log(1);
+            }
             if (selection.anchorNode.nodeName === "P") {
                 if (!(selection.anchorNode instanceof HTMLElement)) {
                     console.error("anchorNode is not HTMLElement");
@@ -78,7 +84,7 @@ export class Command {
             }
         }
 
-        if ((event.key === "B" || event.key === "b") && event.ctrlKey) {
+        if (event.key.toUpperCase() === "B" && event.ctrlKey) {
             const shortcutFormat = ShortcutFormat.getInstance<ShortcutFormat>(
                 this.sync
             );
@@ -87,14 +93,14 @@ export class Command {
             shortcutFormat.execute(TextFormat.BOLD, selection);
         }
 
-        // if ((event.key === "z" || event.key === "Z") && event.ctrlKey) {
-        //     const shortcutUndo = ShortcutUndo.getInstance<ShortcutUndo>(
-        //         this.sync
-        //     );
-        //     event.preventDefault();
-        //     const selection = document.getSelection();
-        //     shortcutUndo.execute(selection);
-        // }
+        if (event.key.toUpperCase() === "Z" && event.ctrlKey) {
+            const shortcutUndo = ShortcutUndo.getInstance<ShortcutUndo>(
+                this.sync
+            );
+            event.preventDefault();
+            const selection = document.getSelection();
+            shortcutUndo.execute(selection);
+        }
 
         if (event.key === CommandKeyboardEvent.DELETE) {
             event.preventDefault();
@@ -115,12 +121,14 @@ export class Command {
             }
             const textNode = element;
             const parent = DomNode.fromExistingElement(textNode.parentElement);
+
             if (parent.getNodeName() === "P") {
                 const inputParagraph =
                     InputParagraph.getInstance<InputParagraph>(this.sync);
                 inputParagraph.execute(textNode, parent, selection);
                 return;
             }
+            
 
             if (parent.getNodeName() === "SPAN") {
                 const inputTextNode = InputTextNode.getInstance<InputParagraph>(

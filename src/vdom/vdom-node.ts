@@ -244,7 +244,11 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
             return new VDomNode(VDomNodeType.PARAGRAPH);
         }
         if (element.nodeName === "SPAN") {
-            return new VDomNode(VDomNodeType.SPAN);
+            const vSpan = new VDomNode(VDomNodeType.SPAN);
+            if (element.textContent) {
+                vSpan.setText(element.textContent);
+            }
+            return vSpan;
         }
     }
 

@@ -69,12 +69,25 @@ export class EditorDebugger {
     }
 
     printTree() {
+        console.log("vdomRoot:==========================");
         const vdomRoot = this.getVdomRoot();
         vdomRoot.printTree();
+
+        console.log();
+        
+        const undoStack = this.getUndoStack() as [];
+        undoStack.slice(0, 3).forEach((item: any) => {
+            console.log("undoStack: =========================");
+            item.printTree();
+        });
     }
 
     private getVdomRoot(): VDomNode {
         // private 속성 우회 접근 (임시 디버깅 용도라면 허용 가능)
         return (this.editor as any)["vdom"];
+    }
+
+    private getUndoStack(): any {
+        return (this.editor as any)["sync"]["undoStack"];
     }
 }
