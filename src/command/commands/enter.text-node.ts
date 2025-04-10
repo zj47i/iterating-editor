@@ -33,8 +33,6 @@ export class EnterTextNode extends CommandBase {
             const former = span.getText().slice(0, cursorPosition);
             const latter = span.getText().slice(cursorPosition);
 
-            console.log("former", former);
-
             if (cursorPosition === 0) {
                 this.sync.remove(vSpan);
             } else {

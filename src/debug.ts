@@ -63,7 +63,7 @@ export class EditorDebugger {
         document.addEventListener("keydown", (event) => {
             if (event.ctrlKey && event.key === "d") {
                 event.preventDefault(); // 브라우저 기본 Ctrl+D 동작 방지
-                console.log(this.printTree());
+                this.printTree();
             }
         });
     }
@@ -74,9 +74,9 @@ export class EditorDebugger {
         vdomRoot.printTree();
 
         console.log();
-        
+
         const undoStack = this.getUndoStack() as [];
-        undoStack.slice(0, 3).forEach((item: any) => {
+        undoStack.slice(-3).forEach((item: any) => {
             console.log("undoStack: =========================");
             item.printTree();
         });

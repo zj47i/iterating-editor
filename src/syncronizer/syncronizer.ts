@@ -3,7 +3,7 @@ import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
 import { editScript } from "./algorithm/edit-script";
 import { LCS } from "./algorithm/lcs";
-import { Hook } from "./decorator/hook";
+import { HookBefore } from "./decorator/hook-before";
 import _ from "lodash";
 
 export class Synchronizer {
@@ -22,7 +22,7 @@ export class Synchronizer {
         while (stack.length > 0) {
             const [currentNode, newNode] = stack.pop();
 
-            if (currentNode.hash === newNode.hash) continue;
+            if (currentNode.isEqual(newNode)) continue;
 
             if (currentNode.getText() !== newNode.getText()) {
                 this.setText(currentNode, newNode.getText());
@@ -48,9 +48,9 @@ export class Synchronizer {
                 oldIdx++;
                 newIdx++;
             }
-            const edits = editScript(oldChildren, newChildren, lcs);
+            const operations = editScript(oldChildren, newChildren, lcs);
 
-            for (const op of edits) {
+            for (const op of operations) {
                 if (op.edit === "insert") {
                     this.attachSubVdom(
                         currentNode,
@@ -58,7 +58,7 @@ export class Synchronizer {
                         op.vnode.deepClone()
                     );
                 } else if (op.edit === "delete") {
-                    this.detachVdom(currentNode, op.vnode); // should update hash internally
+                    this.detachVdom(currentNode, op.at); // should update hash internally
                 }
             }
 
@@ -69,11 +69,10 @@ export class Synchronizer {
         }
     }
 
-    detachVdom(vdomNode: VDomNode, target: VDomNode) {
+    detachVdom(vdomNode: VDomNode, at: number) {
         const domNode = this.findDomNodeFrom(vdomNode);
-        const targetDomNode = this.findDomNodeFrom(target);
-        vdomNode.detach(target);
-        domNode.detach(targetDomNode);
+        domNode.detach(domNode.getChildren()[at])
+        vdomNode.detach(vdomNode.getChildren()[at]);
     }
 
     attachSubVdom(vdomNode: VDomNode, at: number, subVdom: VDomNode) {
@@ -88,33 +87,35 @@ export class Synchronizer {
         const lastVdom = this.undoStack.pop();
         this.redoStack.push(this.vdom.deepClone());
         this.replaceVDom(this.vdom, lastVdom);
-        this.vdom = lastVdom;
     }
 
     public redo() {}
 
-    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
-    public setText(spanVDomNode: VDomNode, text: string, isFromDom = false) {
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
+    public setText(spanVDomNode: VDomNode, text: string) {
         if (spanVDomNode.type !== "span") {
             console.error("spanVDomNode.type !== span");
             return;
         }
         spanVDomNode.setText(text);
-        if (isFromDom) {
-            return;
-        }
         const span = this.findDomNodeFrom(spanVDomNode);
         span.getElement().textContent = text;
     }
 
-    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
+    public setTextFromDom(spanDomNode: DomNode, text: string) {
+        const vSpan = this.findVDomNodeFrom(spanDomNode);
+        vSpan.setText(text);
+    }
+
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public format(vSpan: VDomNode, textFormat: TextFormat) {
         const span = this.findDomNodeFrom(vSpan);
         vSpan.setFormat(textFormat);
         span.setFormat(textFormat);
     }
 
-    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public merge(vParagraph1: VDomNode, vParagraph2: VDomNode) {
         const paragraph1 = this.findDomNodeFrom(vParagraph1);
         const paragraph2 = this.findDomNodeFrom(vParagraph2);
@@ -130,7 +131,7 @@ export class Synchronizer {
         
     }
 
-    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewVDomNode(vParent: VDomNode, vChild: VDomNode) {
         const parent = this.findDomNodeFrom(vParent);
         const child = DomNode.from(vChild);
@@ -138,7 +139,7 @@ export class Synchronizer {
         parent.attachLast(child);
     }
 
-    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewDomNode(parent: DomNode, child: DomNode) {
         const vParent = this.findVDomNodeFrom(parent);
         const vChild = VDomNode.from(child.getElement());
@@ -146,7 +147,7 @@ export class Synchronizer {
         parent.attachLast(child);
     }
 
-    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public remove(vdomNode: VDomNode) {
         const domNode = this.findDomNodeFrom(vdomNode);
         const parent = domNode.getParent();
@@ -158,7 +159,7 @@ export class Synchronizer {
         }
     }
 
-    @Hook<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public addNewNextSiblings(vdomNode: VDomNode, siblings: VDomNode[]) {
         const domNode = this.findDomNodeFrom(vdomNode);
         vdomNode.addNextSiblings(siblings);
@@ -189,7 +190,6 @@ export class Synchronizer {
         const path: number[] = [];
         while (vdomNode.type !== "root") {
             if (!vdomNode.parent) {
-                console.log(vdomNode);
                 console.error("vdomNode.parent is undefined");
                 return [];
             }
@@ -283,7 +283,7 @@ export class Synchronizer {
                 }
 
                 if (vNode.getText() && vNode.getText() !== domNode.getText()) {
-                    console.log(vNode.getText(), domNode.getText());
+                    console.error(vNode.getText(), domNode.getText());
                     throw new Error("vNode.getText() !== domNode.getText()");
                 }
             }

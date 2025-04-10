@@ -1,4 +1,4 @@
-export function Hook<T>(hookFn: (this: T) => void) {
+export function HookBefore<T>(hookFn: (this: T) => void) {
   return function <
     K extends keyof T,
     F extends (...args: any[]) => any
@@ -11,8 +11,8 @@ export function Hook<T>(hookFn: (this: T) => void) {
     if (!original) return;
 
     descriptor.value = function (this: T, ...args: Parameters<F>): ReturnType<F> {
-      const result = original.apply(this, args);
       hookFn.call(this);
+      const result = original.apply(this, args);
       return result;
     } as unknown as F;
   };

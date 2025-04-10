@@ -11,6 +11,7 @@ import { TextFormat } from "../enum/text-format";
 import { BackspaceTextNode } from "./commands/backspace.text-node";
 import { DeleteRange } from "./commands/delete.range";
 import { ShortcutUndo } from "./commands/shortcut.undo";
+import { BackspaceTextNodeEmpty } from "./commands/backspace.text-node.empty";
 
 export class Command {
     constructor(private sync: Synchronizer) {}
@@ -61,11 +62,24 @@ export class Command {
                     event
                 );
             }
-            if (selection.anchorNode.nodeType === Node.TEXT_NODE &&
+            if (
+                selection.anchorNode.nodeType === Node.TEXT_NODE &&
                 selection.anchorOffset === 1
             ) {
+                if (!(selection.anchorNode instanceof Text)) {
+                    console.error("textNode is not Text");
+                    return;
+                }
                 event.preventDefault();
-                console.log(1);
+                const backspaceTextNodeEmpty =
+                    BackspaceTextNodeEmpty.getInstance<BackspaceTextNodeEmpty>(
+                        this.sync
+                    );
+                backspaceTextNodeEmpty.execute(
+                    selection,
+                    selection.anchorNode,
+                    event
+                );
             }
             if (selection.anchorNode.nodeName === "P") {
                 if (!(selection.anchorNode instanceof HTMLElement)) {
@@ -128,7 +142,6 @@ export class Command {
                 inputParagraph.execute(textNode, parent, selection);
                 return;
             }
-            
 
             if (parent.getNodeName() === "SPAN") {
                 const inputTextNode = InputTextNode.getInstance<InputParagraph>(

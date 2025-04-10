@@ -8,22 +8,22 @@ export class BackspaceTextNode extends CommandBase {
     }
 
     public execute(selection: Selection, textNode: Text, event: KeyboardEvent) {
-        console.info("BackspaceTextNode");
+        console.info("BackspaceTextNode$");
         const span = DomNode.fromExistingElement(textNode.parentElement);
         const paragraph = span.getParent();
         const paragraphVDomNode = this.sync.findVDomNodeFrom(paragraph);
 
         const previousParagraphVDomNode =
             paragraphVDomNode.getPreviousSibling();
-        if (!previousParagraphVDomNode) {
-            event.preventDefault();
-            return;
+        if (previousParagraphVDomNode) {
+            this.sync.merge(previousParagraphVDomNode, paragraphVDomNode);
+            const range = document.createRange();
+            range.setStart(textNode, 0);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
         }
-        this.sync.merge(previousParagraphVDomNode, paragraphVDomNode);
-        const range = document.createRange();
-        range.setStart(textNode, 0);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
+        event.preventDefault();
+        return;
     }
 }

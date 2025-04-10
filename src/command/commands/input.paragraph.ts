@@ -8,7 +8,7 @@ export class InputParagraph extends CommandBase {
     }
 
     public execute(textNode: Text, paragraph: DomNode, selection: Selection) {
-        console.info("paragraphInput$");
+        console.info("InputParagraph$");
         const newSpan = DomNode.createSpan(textNode);
         this.sync.appendNewDomNode(paragraph, newSpan);
         const range = document.createRange();

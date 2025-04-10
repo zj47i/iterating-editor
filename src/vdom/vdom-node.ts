@@ -18,7 +18,8 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     private children: VDomNode[];
     private text?: string | null;
     public format?: TextFormat[];
-    public hash: string;
+    private hash: string;
+    private structHash: string;
 
     constructor(
         readonly type: VDomNodeType,
@@ -28,7 +29,34 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         this.children = [];
         this.text = null;
         this.format = [];
+        this.setHash();
     }
+
+    private fnv1a(str: string) {
+        let hash = 2166136261;
+        for (let i = 0; i < str.length; i++) {
+            hash ^= str.charCodeAt(i);
+            hash +=
+                (hash << 1) +
+                (hash << 4) +
+                (hash << 7) +
+                (hash << 8) +
+                (hash << 24);
+        }
+        return (hash >>> 0).toString(16);
+    }
+
+    private setHash() {
+        const data = JSON.stringify({
+            id: this.id,
+            text: this.getText(),
+            format: this.getFormats(),
+            childrenHash: this.getChildren().map((c: any) => c.hash),
+        });
+        this.hash = this.fnv1a(data);
+    }
+
+    
 
     public isEqual(other: VDomNode): boolean {
         return this.hash === other.hash;
@@ -101,7 +129,6 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         this.parent = null;
     }
 
-    @UpdateHash()
     public empty() {
         while (this.children.length > 0) {
             this.detach(this.getChildren()[0]);
@@ -112,6 +139,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         this.attach(node, this.getChildren().length);
     }
 
+    @UpdateHash()
     attach(node: VDomNode, at: number) {
         if (node.parent) {
             console.error("node already has parent. detach first");
@@ -121,6 +149,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         node.parent = this;
     }
 
+    @UpdateHash()
     detach(node: VDomNode) {
         const at = this.getChildren().indexOf(node);
         if (at === -1) {
@@ -161,10 +190,6 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         this.text = this.text.slice(0, index) + text + this.text.slice(index);
     }
 
-    static createRootNode(): VDomNode {
-        return new VDomNode(VDomNodeType.ROOT);
-    }
-
     public findPathToAncestorNode(node: VDomNode): VDomNode[] {
         const path: VDomNode[] = [];
         let current: VDomNode = this;
@@ -184,6 +209,10 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
             current = current.parent;
         }
         return path;
+    }
+
+    static createRootNode(): VDomNode {
+        return new VDomNode(VDomNodeType.ROOT);
     }
 
     public static findLowestCommonAncestor(
