@@ -39,6 +39,5 @@ describe("syncronizer", () => {
         expect(vSpan3).toEqual(sync.findVDomNodeFrom(span3));
         expect(vSpan4).toEqual(sync.findVDomNodeFrom(span4));
         expect(vSpan5).toEqual(sync.findVDomNodeFrom(span5));
-
     });
 });

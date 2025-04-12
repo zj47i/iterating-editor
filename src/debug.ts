@@ -73,11 +73,9 @@ export class EditorDebugger {
         const vdomRoot = this.getVdomRoot();
         vdomRoot.printTree();
 
-        console.log();
-
         const undoStack = this.getUndoStack() as [];
         undoStack.slice(-3).forEach((item: any) => {
-            console.log("undoStack: =========================");
+            console.log("undoStack: ++++++++++++++++++++++++++");
             item.printTree();
         });
     }

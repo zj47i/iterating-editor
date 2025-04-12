@@ -200,7 +200,7 @@ test("addNextSiblings", () => {
     const vdomNode = mockVdom();
 
     const span4 = vdomNode.span4;
-    const parent = span4.parent;
+    const parent = span4.getParent()!;
     const index = parent.getChildren().indexOf(span4);
 
     const newSpan1 = new VDomNode(VDomNodeType.SPAN);

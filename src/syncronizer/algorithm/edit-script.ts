@@ -1,19 +1,29 @@
 import { Equatable } from "../../interface/equatable.interface";
 
+export type EditOp<T> =
+    | { edit: "delete" | "keep"; at: number }
+    | { edit: "insert"; at: number; vnode: T };
+
 export const editScript = <T extends Equatable<T>>(
     a: T[],
     b: T[],
     lcs: T[]
-): { edit: "insert" | "delete" | "keep"; at: number; vnode?: T }[] => {
+): EditOp<T>[] => {
     let i = 0; // a index
     let j = 0; // b index
     let k = 0; // lcs index
     let pos = 0; // 가상의 현재 위치
-    const script: {
-        edit: "insert" | "delete" | "keep";
-        at: number;
-        vnode?: T;
-    }[] = [];
+    const script: (
+        | {
+              edit: "delete" | "keep";
+              at: number;
+          }
+        | {
+              edit: "insert";
+              at: number;
+              vnode: T;
+          }
+    )[] = [];
 
     while (k < lcs.length) {
         const vl = lcs[k];
@@ -32,7 +42,12 @@ export const editScript = <T extends Equatable<T>>(
         }
 
         // keep
-        if (i < a.length && j < b.length && a[i].isEqual(vl) && b[j].isEqual(vl)) {
+        if (
+            i < a.length &&
+            j < b.length &&
+            a[i].isEqual(vl) &&
+            b[j].isEqual(vl)
+        ) {
             script.push({ edit: "keep", at: pos });
             i++;
             j++;

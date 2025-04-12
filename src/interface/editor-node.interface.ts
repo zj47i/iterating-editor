@@ -10,8 +10,8 @@ export interface EditorNode<T> {
     attach(node: T, at: number): void;
     detach(node: T): T;
     isEmpty(): boolean;
-    getPreviousSibling(): T | undefined;
-    getNextSibling(): T | undefined;
+    getPreviousSibling(): T | null;
+    getNextSibling(): T | null;
     addNextSiblings(siblings: T[]): void;
-    getParent(): T | undefined;
+    getParent(): T | null;
 }

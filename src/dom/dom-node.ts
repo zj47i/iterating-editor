@@ -8,10 +8,11 @@ export class DomNode implements EditorNode<DomNode> {
     static instances = new WeakMap<HTMLElement, DomNode>();
 
     static fromExistingElement(element: HTMLElement): DomNode {
-        if (DomNode.instances.has(element)) {
-            return DomNode.instances.get(element);
+        const domNode = DomNode.instances.get(element);
+        if (domNode) {
+            return domNode;
         }
-        console.error("element is not registered");
+        throw new Error("element is not DomNode");
     }
 
     public static createParagraph(): DomNode {
@@ -28,13 +29,18 @@ export class DomNode implements EditorNode<DomNode> {
 
     public static from(vdomNode: VDomNode): DomNode {
         if (vdomNode.type === "span") {
-            return DomNode.createSpan();
+            const text = vdomNode.getText();
+            if (text === null) {
+                return DomNode.createSpan();
+            } else {
+                return DomNode.createSpan(document.createTextNode(text));
+            }
         } else if (vdomNode.type === "paragraph") {
             const paragraph = DomNode.createParagraph();
             paragraph.getElement().innerHTML = "<br>";
             return paragraph;
         }
-        console.error("unknown type: ", vdomNode.type);
+        throw new Error("unknown vdom node type");
     }
 
     public static fromVdom(vdomRoot: VDomNode): DomNode {
@@ -60,8 +66,9 @@ export class DomNode implements EditorNode<DomNode> {
     }
 
     constructor(private element: HTMLElement) {
-        if (DomNode.instances.has(element)) {
-            return DomNode.instances.get(element);
+        const domNode = DomNode.instances.get(element);
+        if (domNode) {
+            return domNode;
         }
         this.element = element;
         this.nodeName = element.nodeName;
@@ -70,7 +77,7 @@ export class DomNode implements EditorNode<DomNode> {
 
     private insertBefore(newDomNode: DomNode, referenceDomNode: DomNode) {
         if (!referenceDomNode) {
-            this.element.insertBefore(newDomNode.element, undefined);
+            this.element.insertBefore(newDomNode.element, null);
             return;
         }
         this.element.insertBefore(newDomNode.element, referenceDomNode.element);
@@ -101,7 +108,7 @@ export class DomNode implements EditorNode<DomNode> {
         this.element.style.fontStyle = format;
     }
 
-    public getText(): string {
+    public getText(): string | null {
         return this.element.textContent;
     }
 
@@ -144,20 +151,19 @@ export class DomNode implements EditorNode<DomNode> {
             console.error("node is not child");
         }
         node.element.remove();
-        if (this.isEmpty()) {
+        if (this.getNodeName() === "P" && this.isEmpty()) {
             this.element.innerHTML = "<br>";
         }
         return node;
     }
 
-    public getPreviousSibling(): DomNode {
+    public getPreviousSibling(): DomNode | null {
         const element = this.element.previousElementSibling;
         if (!element) {
             return null;
         }
         if (!(element instanceof HTMLElement)) {
-            console.error("element is not HTMLElement");
-            return null;
+            throw new Error("element is not HTMLElement");
         }
         return DomNode.fromExistingElement(element);
     }
@@ -167,28 +173,29 @@ export class DomNode implements EditorNode<DomNode> {
             .filter((child) => child.nodeName !== "BR")
             .map((child) => {
                 if (!(child instanceof HTMLElement)) {
-                    console.error("child is not HTMLElement");
-                    return null;
+                    throw new Error("child is not HTMLElement");
                 }
 
                 return DomNode.fromExistingElement(child);
             });
     }
 
-    public getNextSibling(): DomNode {
+    public getNextSibling(): DomNode | null {
         const element = this.element.nextElementSibling;
         if (!element) {
             return null;
         }
         if (!(element instanceof HTMLElement)) {
-            console.error("element is not HTMLElement");
-            return null;
+            throw new Error("element is not HTMLElement");
         }
         return DomNode.fromExistingElement(element);
     }
 
     public addNextSiblings(siblings: DomNode[]): void {
         const parentElement = this.element.parentElement;
+        if (!parentElement) {
+            throw new Error("parentElement is null");
+        }
         let target = this.element;
         siblings.forEach((sibling) => {
             const siblingElement = sibling.element;
@@ -201,7 +208,7 @@ export class DomNode implements EditorNode<DomNode> {
         return this.element;
     }
 
-    public getParent(): DomNode {
+    public getParent(): DomNode | null {
         if (this.element.parentElement === null) {
             return null;
         }
@@ -214,7 +221,7 @@ export class DomNode implements EditorNode<DomNode> {
             this.attachLast(child);
         }
         const otherParent = other.getParent();
-        otherParent.detach(other);
+        if (otherParent) otherParent.detach(other);
     }
 
     public empty() {

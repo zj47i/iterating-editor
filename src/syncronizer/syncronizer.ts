@@ -1,10 +1,11 @@
+import { position } from "../command/commands/selection/position";
 import { DomNode } from "../dom/dom-node";
 import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
 import { editScript } from "./algorithm/edit-script";
 import { LCS } from "./algorithm/lcs";
 import { HookBefore } from "./decorator/hook-before";
-import _ from "lodash";
+import _, { get } from "lodash";
 
 export class Synchronizer {
     private undoStack: VDomNode[] = [];
@@ -20,7 +21,7 @@ export class Synchronizer {
         const stack: [VDomNode, VDomNode][] = [[currentVdom, newVdom]];
 
         while (stack.length > 0) {
-            const [currentNode, newNode] = stack.pop();
+            const [currentNode, newNode] = stack.pop()!;
 
             if (currentNode.isEqual(newNode)) continue;
 
@@ -36,7 +37,7 @@ export class Synchronizer {
 
             const oldChildren = currentNode.getChildren();
             const newChildren = newNode.getChildren();
-            const lcs = LCS(oldChildren, newChildren); // returns list of [oldIdx, newIdx]
+            const lcs = LCS<VDomNode>(oldChildren, newChildren); // returns list of [oldIdx, newIdx]
             // index pair 구하기
             const lcsIndexPairs: [number, number][] = [];
             let oldIdx = 0;
@@ -48,7 +49,11 @@ export class Synchronizer {
                 oldIdx++;
                 newIdx++;
             }
-            const operations = editScript(oldChildren, newChildren, lcs);
+            const operations = editScript<VDomNode>(
+                oldChildren,
+                newChildren,
+                lcs
+            );
 
             for (const op of operations) {
                 if (op.edit === "insert") {
@@ -71,8 +76,8 @@ export class Synchronizer {
 
     detachVdom(vdomNode: VDomNode, at: number) {
         const domNode = this.findDomNodeFrom(vdomNode);
-        domNode.detach(domNode.getChildren()[at])
         vdomNode.detach(vdomNode.getChildren()[at]);
+        domNode.detach(domNode.getChildren()[at]);
     }
 
     attachSubVdom(vdomNode: VDomNode, at: number, subVdom: VDomNode) {
@@ -80,11 +85,21 @@ export class Synchronizer {
         const subDom = DomNode.fromVdom(subVdom);
         vdomNode.attach(subVdom, at);
         domNode.attach(subDom, at);
+        const text = subVdom.getText();
+        position(
+            window.getSelection()!, // TODO
+            subDom.getElement(),
+            subDom.getNodeName() === "SPAN"
+                ? text
+                    ? text.length
+                    : 0
+                : subDom.getChildren().length
+        );
     }
 
     public undo() {
         if (this.undoStack.length === 0) return;
-        const lastVdom = this.undoStack.pop();
+        const lastVdom = this.undoStack.pop()!;
         this.redoStack.push(this.vdom.deepClone());
         this.replaceVDom(this.vdom, lastVdom);
     }
@@ -92,7 +107,7 @@ export class Synchronizer {
     public redo() {}
 
     @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
-    public setText(spanVDomNode: VDomNode, text: string) {
+    public setText(spanVDomNode: VDomNode, text: string | null) {
         if (spanVDomNode.type !== "span") {
             console.error("spanVDomNode.type !== span");
             return;
@@ -128,7 +143,6 @@ export class Synchronizer {
         }
         vParagraph1.absorb(vParagraph2);
         paragraph1.absorb(paragraph2);
-        
     }
 
     @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
@@ -151,7 +165,10 @@ export class Synchronizer {
     public remove(vdomNode: VDomNode) {
         const domNode = this.findDomNodeFrom(vdomNode);
         const parent = domNode.getParent();
-        const vParent = vdomNode.parent;
+        const vParent = vdomNode.getParent();
+        if (!parent || !vParent) {
+            throw new Error("parent or vParent is undefined");
+        }
         vParent.detach(vdomNode);
         parent.detach(domNode);
         if (parent && parent.getNodeName() === "P" && parent.isEmpty()) {
@@ -189,13 +206,13 @@ export class Synchronizer {
     private findPathToVRoot(vdomNode: VDomNode): number[] {
         const path: number[] = [];
         while (vdomNode.type !== "root") {
-            if (!vdomNode.parent) {
-                console.error("vdomNode.parent is undefined");
+            const parent = vdomNode.getParent();
+            if (!parent) {
                 return [];
             }
-            const index = vdomNode.parent.getChildren().indexOf(vdomNode);
+            const index = parent.getChildren().indexOf(vdomNode);
             path.push(index);
-            vdomNode = vdomNode.parent;
+            vdomNode = parent;
         }
         return path;
     }
@@ -222,12 +239,10 @@ export class Synchronizer {
         for (let i = path.length - 1; i >= 0; i--) {
             const e = element.getChildren()[path[i]];
             if (!e) {
-                console.error("element is undefined");
-                return null;
+                throw new Error("element is undefined");
             }
             if (!(e.getElement() instanceof HTMLElement)) {
-                console.error("element is not HTMLElement");
-                return null;
+                throw new Error("element is not HTMLElement");
             }
             element = e;
         }
@@ -237,9 +252,12 @@ export class Synchronizer {
     public checkSync(): boolean {
         const vDomStack: VDomNode[] = [this.vdom];
         const domStack: DomNode[] = [this.dom];
-        while (vDomStack.length > 0) {
-            const vNode = vDomStack.pop();
-            const domNode = domStack.pop();
+        while (vDomStack.length > 0 && domStack.length > 0) {
+            if (vDomStack.length !== domStack.length) {
+                throw new Error("vDomStack.length !== domStack.length");
+            }
+            const vNode = vDomStack.pop()!;
+            const domNode = domStack.pop()!;
             if (vNode.type === "root") {
                 if (domNode.getElement().id !== "@editor") {
                     throw new Error(
@@ -276,7 +294,12 @@ export class Synchronizer {
                     }
                 }
 
-                if (vNode.getText() === null && domNode.getText() !== "") {
+                if (
+                    vNode.getText() === null &&
+                    domNode.getText() !== "" &&
+                    domNode.getText() !== "null"
+                ) {
+                    console.error(vNode.getText(), domNode.getText());
                     throw new Error(
                         "vNode.getText() === null && domNode.getText() !== ''"
                     );

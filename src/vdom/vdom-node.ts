@@ -14,10 +14,10 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         this.HASH_LOCKED = false;
     }
 
-    public parent: VDomNode | null;
+    private parent: VDomNode | null;
     private children: VDomNode[];
-    private text?: string | null;
-    public format?: TextFormat[];
+    private text: string | null;
+    private format: TextFormat[];
     private hash: string;
     private structHash: string;
 
@@ -56,8 +56,6 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         this.hash = this.fnv1a(data);
     }
 
-    
-
     public isEqual(other: VDomNode): boolean {
         return this.hash === other.hash;
     }
@@ -66,7 +64,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         VDomNode.lockHash();
         const clone = new VDomNode(this.type, this.id);
         clone.text = this.text;
-        clone.format = [...this.format];
+        clone.format = this.format.map((f) => f);
         clone.hash = this.hash;
 
         for (const child of this.children) {
@@ -79,7 +77,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         return clone;
     }
 
-    getParent(): VDomNode {
+    getParent(): VDomNode | null {
         return this.parent;
     }
 
@@ -114,7 +112,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
             this.attachLast(child);
         }
         const otherParent = other.parent;
-        otherParent.detach(other);
+        if (otherParent) otherParent.detach(other);
     }
 
     @UpdateHash()
@@ -153,8 +151,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     detach(node: VDomNode) {
         const at = this.getChildren().indexOf(node);
         if (at === -1) {
-            console.error("node is not child");
-            return;
+            throw new Error("node is not child");
         }
         const detached = this.getChildren().splice(at, 1)[0];
         detached.parent = null;
@@ -170,7 +167,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     }
 
     @UpdateHash()
-    public setText(text: string) {
+    public setText(text: string | null) {
         if (this.type !== "span") {
             console.error("only span node can have text");
             return;
@@ -185,15 +182,15 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
             return;
         }
         if (this.text === null) {
-            this.text = "";
+            return (this.text = text);
         }
         this.text = this.text.slice(0, index) + text + this.text.slice(index);
     }
 
     public findPathToAncestorNode(node: VDomNode): VDomNode[] {
         const path: VDomNode[] = [];
-        let current: VDomNode = this;
-        while (current !== node) {
+        let current: VDomNode | null = this;
+        while (current && current !== node) {
             path.push(current);
             current = current.parent;
         }
@@ -203,7 +200,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
 
     public findPathToRoot(): VDomNode[] {
         const path: VDomNode[] = [];
-        let current: VDomNode = this;
+        let current: VDomNode | null = this;
         while (current) {
             path.push(current);
             current = current.parent;
@@ -218,7 +215,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     public static findLowestCommonAncestor(
         node1: VDomNode,
         node2: VDomNode
-    ): VDomNode | undefined {
+    ): VDomNode {
         const path1 = node1.findPathToRoot();
         const path2 = node2.findPathToRoot();
         const setPath2 = new Set(path2);
@@ -227,7 +224,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
                 return node;
             }
         }
-        console.error("no common ancestor found");
+        throw new Error("no common ancestor");
     }
 
     public static traversalAfterPath(path: VDomNode[]) {
@@ -253,7 +250,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         }
 
         while (stack.length > 0) {
-            const current = stack.pop();
+            const current = stack.pop()!;
             const index = path.indexOf(current);
             if (index === -1) {
                 result.push(...VDomNode.preOrderTraversal(current));
@@ -268,7 +265,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         return result;
     }
 
-    static from(element: HTMLElement) {
+    static from(element: HTMLElement): VDomNode {
         if (element.nodeName === "P") {
             return new VDomNode(VDomNodeType.PARAGRAPH);
         }
@@ -279,16 +276,19 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
             }
             return vSpan;
         }
+        throw new Error("unknown element");
     }
 
     public static traversalBeforePath(p: VDomNode[]): VDomNode[] {
         const path = Array.from(p);
-        const states = [];
-        const current = path.pop();
-        states.push(current);
+        const states: VDomNode[] = [];
+        states.push(path.pop()!);
         while (path.length > 0) {
-            const current = path.pop();
-            const parent = current.parent;
+            const current = path.pop()!;
+            const parent = current.getParent();
+            if (!parent) {
+                throw new Error("no parent");
+            }
             const index = parent.children.indexOf(current);
             if (index >= 1) {
                 for (let i = 0; i < index; i++) {
@@ -308,7 +308,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         const result: VDomNode[] = [];
 
         while (stack.length > 0) {
-            const current = stack.pop();
+            const current = stack.pop()!;
             result.push(current);
 
             for (let i = current.children.length - 1; i >= 0; i--) {
@@ -324,7 +324,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         const stack: VDomNode[] = [this];
 
         while (stack.length > 0) {
-            const current = stack.shift();
+            const current = stack.shift()!;
             for (const child of current.children) {
                 result.push(child);
                 stack.push(child);
@@ -402,24 +402,22 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
 
     public getPreviousSibling() {
         if (!this.parent) {
-            console.error("no parent");
-            return;
+            throw null;
         }
         const index = this.parent.children.indexOf(this);
         if (index === 0) {
-            return;
+            return null;
         }
         return this.parent.children[index - 1];
     }
 
     public getNextSibling() {
         if (!this.parent) {
-            console.error("no parent");
-            return;
+            throw null;
         }
         const index = this.parent.children.indexOf(this);
         if (index === this.parent.children.length - 1) {
-            return;
+            return null;
         }
         return this.parent.children[index + 1];
     }
@@ -432,11 +430,12 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
             }
         }
 
-        this.parent.children.splice(
-            this.parent.children.indexOf(this) + 1,
-            0,
-            ...nodes
-        );
+        const parent = this.getParent();
+        if (!parent) {
+            throw new Error("no parent");
+        }
+
+        parent.children.splice(parent.children.indexOf(this) + 1, 0, ...nodes);
 
         nodes.forEach((node) => (node.parent = this.parent));
     }

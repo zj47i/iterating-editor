@@ -14,7 +14,8 @@
         "noEmit": true,
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
-"experimentalDecorators": true,
+        "experimentalDecorators": true,
+        "strictNullChecks": true,
         /* Linting */
         // "strict": true,
         // "noUnusedLocals": true,

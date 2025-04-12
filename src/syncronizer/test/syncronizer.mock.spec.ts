@@ -21,7 +21,7 @@ export const mockSyncronizer = () => {
   `;
 
     const div = document.getElementById("@editor");
-    const dom = new DomNode(div);
+    const dom = new DomNode(div!);
     const vDom = VDomNode.createRootNode();
     const sync = new Synchronizer(dom, vDom);
 
@@ -48,12 +48,12 @@ export const mockSyncronizer = () => {
         vDom,
         sync,
         vP1,
-        p1, 
+        p1,
         vSpan1,
         span1,
         vP2,
         p2,
         vSpan2,
-        span2
+        span2,
     };
 };
