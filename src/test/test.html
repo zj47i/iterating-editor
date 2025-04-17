@@ -39,6 +39,7 @@
   <h2>입력 이벤트 누적 추적</h2>
   <div id="editor" contenteditable="true"></div>
   <button onclick="printLogTextOnly()">로그 텍스트 인쇄</button>
+  <button onclick="clearLog()">로그 초기화</button>
   <div id="log"></div>
 
   <!-- 인쇄용 숨김 영역 -->
@@ -66,7 +67,7 @@
     events.forEach(type => {
       editor.addEventListener(type, (e) => {
         if (e.type === "keydown") {
-            log('=========================================================')
+          log('=========================================================');
         }
         if (e.type === "beforeinput") {
           console.log(e);
@@ -82,6 +83,10 @@
 
       printArea.textContent = text;
       window.print();
+    }
+
+    function clearLog() {
+      logBox.innerHTML = '';
     }
   </script>
 </body>
