@@ -13,24 +13,48 @@ export class DeleteRange extends CommandBase {
 
     public execute(selection: Selection) {
         console.info("DeleteRange$");
-        const { endNode, endNodeOffset, startNode, startNodeOffset } = startEndTextNodes(selection);
-        const startSpan = DomNode.fromExistingElement(startNode.parentElement);
-        const endSpan = DomNode.fromExistingElement(endNode.parentElement);
-        const startVSpan = this.sync.findVDomNodeFrom(startSpan);
-        const endVSpan = this.sync.findVDomNodeFrom(endSpan);
-        const vNodes = VDomNode.findVDomNodesBetween(startVSpan, endVSpan).filter(
-            (vdomNode) => vdomNode.type === VDomNodeType.SPAN
+        const { endNode, endNodeOffset, startNode, startNodeOffset } =
+            startEndTextNodes(selection);
+        const startVNode = this.sync.findVDomNodeFrom(
+            DomNode.fromExistingElement(startNode.parentElement)
         );
-        const remainText = startNode.textContent.slice(0, startNodeOffset) + endNode.textContent.slice(endNodeOffset);
-        if (startNodeOffset > 0 && startNodeOffset < startNode.textContent.length - 1) {
-            const node = vNodes.shift();
-            this.sync.setText(node, remainText);
-        }
-        while (vNodes.length > 0) {
-            const vNode = vNodes.pop();
-            this.sync.remove(vNode);
-        }
+        const endVNode = this.sync.findVDomNodeFrom(
+            DomNode.fromExistingElement(endNode.parentElement)
+        );
 
-        position(selection, startSpan.getElement().firstChild, startNodeOffset);
+        const leftText =
+            startNode.textContent.slice(0, startNodeOffset) +
+            endNode.textContent.slice(endNodeOffset);
+
+        if (startVNode === endVNode) {
+            this.sync.setText(startVNode, leftText);
+        } else {
+            this.sync.setText(
+                startVNode,
+                startNode.textContent.slice(0, startNodeOffset)
+            );
+            this.sync.setText(
+                endVNode,
+                endNode.textContent.slice(endNodeOffset)
+            );
+
+            const all = VDomNode.findVDomNodesBetween(
+                startVNode,
+                endVNode
+            ).filter((v) => v.type === VDomNodeType.SPAN);
+
+            const middleNodes = all.filter(
+                (v) => v !== startVNode && v !== endVNode
+            );
+            for (const node of middleNodes) {
+                this.sync.remove(node);
+            }
+        }
+        const startSpan = this.sync.findDomNodeFrom(startVNode);
+        const firstChild = startSpan.getElement().firstChild;
+        if (!firstChild) {
+            throw new Error("firstChild is null");
+        }
+        position(selection, firstChild, startNodeOffset);
     }
 }

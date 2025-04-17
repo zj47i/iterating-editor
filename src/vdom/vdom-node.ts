@@ -27,9 +27,15 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     ) {
         this.parent = null;
         this.children = [];
-        this.text = null;
         this.format = [];
+
         this.setHash();
+    }
+
+    public static createVSpan(text: string) {
+        const vSpan = new VDomNode(VDomNodeType.SPAN);
+        vSpan.setText(text);
+        return vSpan;
     }
 
     private fnv1a(str: string) {
@@ -49,7 +55,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     private setHash() {
         const data = JSON.stringify({
             id: this.id,
-            text: this.getText(),
+            text: this.type === VDomNodeType.SPAN ? this.getText() : null,
             format: this.getFormats(),
             childrenHash: this.getChildren().map((c: any) => c.hash),
         });
@@ -163,23 +169,30 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     }
 
     public getText() {
+        if (this.type !== "span") {
+            throw new Error("only span node can have text");
+        }
+        if (this.text === null) {
+            throw new Error("text is null");
+        }
         return this.text;
     }
 
     @UpdateHash()
-    public setText(text: string | null) {
+    public setText(text: string) {
         if (this.type !== "span") {
-            console.error("only span node can have text");
-            return;
+            throw new Error("only span node can have text");
         }
         this.text = text;
     }
 
     @UpdateHash()
-    public spliceText(text: string, index = 0) {
+    public insertText(text: string, index = 0) {
+        if (text === null || text === undefined) {
+            throw new Error("text is null");
+        }
         if (this.type !== "span") {
-            console.error("only span node can have text");
-            return;
+            throw new Error("only span node can have text");
         }
         if (this.text === null) {
             return (this.text = text);
@@ -270,10 +283,11 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
             return new VDomNode(VDomNodeType.PARAGRAPH);
         }
         if (element.nodeName === "SPAN") {
-            const vSpan = new VDomNode(VDomNodeType.SPAN);
-            if (element.textContent) {
-                vSpan.setText(element.textContent);
+            if (!element.textContent) {
+                throw new Error("textContent is null");
             }
+            const vSpan = VDomNode.createVSpan(element.textContent);
+
             return vSpan;
         }
         throw new Error("unknown element");

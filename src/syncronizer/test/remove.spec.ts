@@ -26,7 +26,7 @@ describe("syncronizer", () => {
     });
 
     test("remove", () => {
-        const vSpan3 = new VDomNode(VDomNodeType.SPAN);
+        const vSpan3 = VDomNode.createVSpan("");
         sync.appendNewVDomNode(vP1, vSpan3);
         const span3 = sync.findDomNodeFrom(vSpan3);
 

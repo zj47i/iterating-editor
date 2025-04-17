@@ -107,10 +107,9 @@ export class Synchronizer {
     public redo() {}
 
     @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
-    public setText(spanVDomNode: VDomNode, text: string | null) {
+    public setText(spanVDomNode: VDomNode, text: string) {
         if (spanVDomNode.type !== "span") {
-            console.error("spanVDomNode.type !== span");
-            return;
+            throw new Error("spanVDomNode is not span");
         }
         spanVDomNode.setText(text);
         const span = this.findDomNodeFrom(spanVDomNode);

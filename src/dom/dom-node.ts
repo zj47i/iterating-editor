@@ -108,7 +108,13 @@ export class DomNode implements EditorNode<DomNode> {
         this.element.style.fontStyle = format;
     }
 
-    public getText(): string | null {
+    public getText(): string {
+        if (this.element.nodeName !== "SPAN") {
+            throw new Error("element is not span");
+        }
+        if (this.element.textContent === null) {
+            throw new Error("textContent is null");
+        }
         return this.element.textContent;
     }
 

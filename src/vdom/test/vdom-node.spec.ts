@@ -203,8 +203,8 @@ test("addNextSiblings", () => {
     const parent = span4.getParent()!;
     const index = parent.getChildren().indexOf(span4);
 
-    const newSpan1 = new VDomNode(VDomNodeType.SPAN);
-    const newSpan2 = new VDomNode(VDomNodeType.SPAN);
+    const newSpan1 = VDomNode.createVSpan("");
+    const newSpan2 = VDomNode.createVSpan("");
     span4.addNextSiblings([newSpan1, newSpan2]);
 
     expect(parent.getChildren()[index]).toBe(span4);
@@ -213,10 +213,10 @@ test("addNextSiblings", () => {
     expect(parent.getChildren()[index + 3]).toBe(vdomNode.nestedParagraph1);
 });
 
-test("spliceText", () => {
-    const span = new VDomNode(VDomNodeType.SPAN);
-    span.spliceText("Hello, World!");
-    span.spliceText("Hello, World!", 5);
+test("insertText", () => {
+    const span = VDomNode.createVSpan("");
+    span.insertText("Hello, World!");
+    span.insertText("Hello, World!", 5);
     expect(span.getText()).toBe("HelloHello, World!, World!");
 });
 
