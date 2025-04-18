@@ -134,8 +134,7 @@ export class DomNode implements EditorNode<DomNode> {
 
     public attach(node: DomNode, at: number): void {
         if (node.getElement().parentElement) {
-            console.error("node is already attached");
-            return;
+            throw new Error("node is already attached");
         }
         if (
             this.element.nodeName === "P" &&
@@ -154,7 +153,7 @@ export class DomNode implements EditorNode<DomNode> {
     public detach(node: DomNode): DomNode {
         const at = this.getChildren().indexOf(node);
         if (at === -1) {
-            console.error("node is not child");
+            throw new Error("node is not child");
         }
         node.element.remove();
         if (this.getNodeName() === "P" && this.isEmpty()) {

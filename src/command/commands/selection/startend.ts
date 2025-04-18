@@ -49,12 +49,10 @@ export const startEndTextNodes = (selection: Selection) => {
         ];
     }
     if (!(startNode instanceof Text)) {
-        console.error("startNode is not Text");
-        return;
+        throw new Error("startNode is not Text");
     }
     if (!(endNode instanceof Text)) {
-        console.error("endNode is not Text");
-        return;
+        throw new Error("endNode is not Text");
     }
     return {
         startNode,

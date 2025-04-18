@@ -8,7 +8,6 @@ import { Synchronizer } from "./syncronizer/syncronizer";
 
 const editorDiv = document.getElementById("@editor");
 if (!(editorDiv instanceof HTMLDivElement)) {
-    console.error("editor element not found");
     throw new Error("editor element not found");
 }
 

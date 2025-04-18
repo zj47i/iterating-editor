@@ -94,8 +94,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     @UpdateHash()
     setFormat(format: TextFormat) {
         if (this.type !== "span") {
-            console.error("only span node can be bold");
-            return;
+            throw new Error("only span node can be bold");
         }
         if (!this.format) {
             this.format = [];
@@ -125,8 +124,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     public remove() {
         const parent = this.parent;
         if (!parent) {
-            console.error("no parent");
-            return;
+            throw new Error("no parent");
         }
         const index = parent.children.indexOf(this);
         parent.children.splice(index, 1);
@@ -146,8 +144,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     @UpdateHash()
     attach(node: VDomNode, at: number) {
         if (node.parent) {
-            console.error("node already has parent. detach first");
-            return;
+            throw new Error("node already has parent. detach first");
         }
         this.getChildren().splice(at, 0, node);
         node.parent = this;
@@ -440,7 +437,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     public addNextSiblings(nodes: VDomNode[]) {
         for (const node of nodes) {
             if (node.parent) {
-                console.error("node already has parent. detach first");
+                throw new Error("node already has parent. detach first");
             }
         }
 

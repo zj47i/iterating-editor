@@ -23,8 +23,7 @@ export class Command {
             const selection = getSelection();
             if (selection.anchorNode.nodeType === Node.TEXT_NODE) {
                 if (!(selection.anchorNode instanceof Text)) {
-                    console.error("anchorNode is not Text");
-                    return;
+                    throw new Error("anchorNode is not Text");
                 }
                 const enterTextNode = EnterTextNode.getInstance<EnterTextNode>(
                     this.sync
@@ -51,8 +50,7 @@ export class Command {
                 selection.anchorOffset === 0
             ) {
                 if (!(selection.anchorNode instanceof Text)) {
-                    console.error("textNode is not Text");
-                    return;
+                    throw new Error("anchorNode is not Text");
                 }
                 const backspaceTextNode =
                     BackspaceTextNode.getInstance<BackspaceTextNode>(this.sync);
@@ -67,8 +65,7 @@ export class Command {
                 selection.anchorOffset === 1
             ) {
                 if (!(selection.anchorNode instanceof Text)) {
-                    console.error("textNode is not Text");
-                    return;
+                    throw new Error("anchorNode is not Text");
                 }
                 event.preventDefault();
                 const backspaceTextNodeEmpty =
@@ -83,8 +80,7 @@ export class Command {
             }
             if (selection.anchorNode.nodeName === "P") {
                 if (!(selection.anchorNode instanceof HTMLElement)) {
-                    console.error("anchorNode is not HTMLElement");
-                    return;
+                    throw new Error("anchorNode is not HTMLElement");
                 }
                 const backspaceParagraph =
                     BackspaceParagraph.getInstance<BackspaceParagraph>(
@@ -130,8 +126,7 @@ export class Command {
         const element = selection.anchorNode;
         if (element.nodeType === Node.TEXT_NODE) {
             if (!(element instanceof Text)) {
-                console.error("element is not Text");
-                return;
+                throw new Error("element is not Text");
             }
             const textNode = element;
             const parent = DomNode.fromExistingElement(textNode.parentElement);

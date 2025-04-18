@@ -22,8 +22,7 @@ export class Editor {
         this.dom.getElement().addEventListener("keydown", (event) => {
             console.log("keydown event:", event);
             if (!(event instanceof KeyboardEvent)) {
-                console.error("event is not KeyboardEvent");
-                return;
+                throw new Error("event is not KeyboardEvent");
             }
             this.command.keydown(event);
         });
@@ -31,8 +30,7 @@ export class Editor {
         this.dom.getElement().addEventListener("input", (event) => {
             console.log("input event:", event);
             if (!(event instanceof InputEvent)) {
-                console.error("event is not InputEvent");
-                return;
+                throw new Error("event is not InputEvent");
             }
             this.command.input(event);
         });

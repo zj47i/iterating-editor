@@ -2,6 +2,7 @@ import { position } from "../command/commands/selection/position";
 import { DomNode } from "../dom/dom-node";
 import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
+import { VDomNodeType } from "../vdom/vdom-node.enum";
 import { editScript } from "./algorithm/edit-script";
 import { LCS } from "./algorithm/lcs";
 import { HookBefore } from "./decorator/hook-before";
@@ -25,13 +26,16 @@ export class Synchronizer {
 
             if (currentNode.isEqual(newNode)) continue;
 
-            if (currentNode.getText() !== newNode.getText()) {
-                this.setText(currentNode, newNode.getText());
-            }
-
-            if (!_.isEqual(currentNode.getFormats(), newNode.getFormats())) {
-                for (const format of newNode.getFormats()) {
-                    this.format(currentNode, format);
+            if (currentNode.type === VDomNodeType.SPAN) {
+                if (currentNode.getText() !== newNode.getText()) {
+                    this.setText(currentNode, newNode.getText());
+                }
+                if (
+                    !_.isEqual(currentNode.getFormats(), newNode.getFormats())
+                ) {
+                    for (const format of newNode.getFormats()) {
+                        this.format(currentNode, format);
+                    }
                 }
             }
 
@@ -85,14 +89,11 @@ export class Synchronizer {
         const subDom = DomNode.fromVdom(subVdom);
         vdomNode.attach(subVdom, at);
         domNode.attach(subDom, at);
-        const text = subVdom.getText();
         position(
             window.getSelection()!, // TODO
             subDom.getElement(),
             subDom.getNodeName() === "SPAN"
-                ? text
-                    ? text.length
-                    : 0
+                ? subDom.getText().length
                 : subDom.getChildren().length
         );
     }
@@ -134,11 +135,10 @@ export class Synchronizer {
         const paragraph1 = this.findDomNodeFrom(vParagraph1);
         const paragraph2 = this.findDomNodeFrom(vParagraph2);
         if (!paragraph1) {
-            console.error("paragraph1 is undefined");
+            throw new Error("paragraph1 is undefined");
         }
         if (!(paragraph1.getElement() instanceof HTMLElement)) {
-            console.error("paragraph1's element is not HTMLElement");
-            return;
+            throw new Error("paragraph1's element is not HTMLElement");
         }
         vParagraph1.absorb(vParagraph2);
         paragraph1.absorb(paragraph2);
@@ -189,8 +189,7 @@ export class Synchronizer {
         const path: number[] = [];
         while (element.id !== "@editor") {
             if (!element.parentElement) {
-                console.error("element.parentElement is undefined");
-                return [];
+                throw new Error("element.parentElement is null");
             }
             const index = Array.prototype.indexOf.call(
                 element.parentElement.children,
@@ -298,14 +297,12 @@ export class Synchronizer {
                     domNode.getText() !== "" &&
                     domNode.getText() !== "null"
                 ) {
-                    console.error(vNode.getText(), domNode.getText());
                     throw new Error(
                         "vNode.getText() === null && domNode.getText() !== ''"
                     );
                 }
 
                 if (vNode.getText() && vNode.getText() !== domNode.getText()) {
-                    console.error(vNode.getText(), domNode.getText());
                     throw new Error("vNode.getText() !== domNode.getText()");
                 }
             }
