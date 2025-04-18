@@ -1,8 +1,11 @@
-import { Editor } from "./editor";
+import { Editor } from "./editor/editor";
 import { VDomNode } from "./vdom/vdom-node";
 
 const observer = new MutationObserver((mutations) => {
     const elementTextarea = document.getElementById("@element");
+    if (!elementTextarea) {
+        throw new Error("textarea not found");
+    }
     mutations.forEach((mutation) => {
         if (mutation.type === "childList") {
             // 요소가 새로 추가됨
@@ -53,7 +56,11 @@ const observer = new MutationObserver((mutations) => {
 });
 
 // body와 그 하위 요소들의 childList 변경을 감시
-observer.observe(document.getElementById("@editor"), {
+const editor = document.getElementById("@editor");
+if (!editor) {
+    throw new Error("editor element not found");
+}
+observer.observe(editor, {
     childList: true,
     subtree: true,
 });
@@ -65,6 +72,16 @@ export class EditorDebugger {
                 event.preventDefault(); // 브라우저 기본 Ctrl+D 동작 방지
                 this.printTree();
             }
+        });
+        (editor as any).dom.getElement().addEventListener("click", (event) => {
+            document.addEventListener("selectionchange", () => {
+                const selection = document.getSelection() as any;
+                const s = document.getElementById("@selection")!;
+                s.innerHTML = `anchorNode: ${selection.anchorNode.nodeName}<br>
+                    anchorOffset: ${selection.anchorOffset}<br>
+                    focusNode: ${selection.focusNode.nodeName}<br>
+                    focusOffset: ${selection.focusOffset}<br>`;
+            });
         });
     }
 

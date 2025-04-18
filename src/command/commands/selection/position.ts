@@ -1,8 +1,12 @@
-import { DomNode } from "../../../dom/dom-node";
+import { EditorSelectionObject } from "../../../editor/editor.selection";
 
-export const position = (selection: Selection, node: Node, offset: number) => {
+export const position = (
+    selection: EditorSelectionObject,
+    node: Node,
+    offset: number
+) => {
     const range = document.createRange();
     range.setStart(node, offset);
     selection.removeAllRanges();
     selection.addRange(range);
-}
+};

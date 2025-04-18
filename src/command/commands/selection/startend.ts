@@ -1,6 +1,6 @@
-import { DomNode } from "../../../dom/dom-node";
+import { EditorSelectionObject } from "../../../editor/editor.selection";
 
-export const startEndTextNodes = (selection: Selection) => {
+export const startEndTextNodes = (selection: EditorSelectionObject) => {
     let { anchorNode, anchorOffset, focusNode, focusOffset } = selection;
     let startNode: Node,
         endNode: Node,
@@ -8,7 +8,12 @@ export const startEndTextNodes = (selection: Selection) => {
         endNodeOffset: number;
     if (anchorNode.compareDocumentPosition(focusNode) === 0) {
         if (anchorOffset === focusOffset) {
-            return;
+            [startNode, endNode, startNodeOffset, endNodeOffset] = [
+                anchorNode,
+                focusNode,
+                anchorOffset,
+                focusOffset,
+            ];
         }
         if (anchorOffset < focusOffset) {
             [startNode, endNode, startNodeOffset, endNodeOffset] = [
@@ -25,8 +30,7 @@ export const startEndTextNodes = (selection: Selection) => {
                 anchorOffset,
             ];
         }
-    }
-    else if (
+    } else if (
         anchorNode.compareDocumentPosition(focusNode) ===
         Node.DOCUMENT_POSITION_FOLLOWING
     ) {
@@ -36,8 +40,7 @@ export const startEndTextNodes = (selection: Selection) => {
             anchorOffset,
             focusOffset,
         ];
-    }
-    else if (
+    } else if (
         anchorNode.compareDocumentPosition(focusNode) ===
         Node.DOCUMENT_POSITION_PRECEDING
     ) {
@@ -47,6 +50,10 @@ export const startEndTextNodes = (selection: Selection) => {
             focusOffset,
             anchorOffset,
         ];
+    } else {
+        throw new Error(
+            "anchorNode and focusNode are not in the same document"
+        );
     }
     if (!(startNode instanceof Text)) {
         throw new Error("startNode is not Text");
@@ -59,5 +66,5 @@ export const startEndTextNodes = (selection: Selection) => {
         endNode,
         startNodeOffset,
         endNodeOffset,
-    }
-}
+    };
+};

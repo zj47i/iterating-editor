@@ -5,16 +5,23 @@ import { DomNode } from "../../dom/dom-node";
 import { CommandBase } from "../command.base";
 import { startEndTextNodes } from "./selection/startend";
 import { position } from "./selection/position";
+import { EditorSelectionObject } from "../../editor/editor.selection";
 
 export class DeleteRange extends CommandBase {
     private constructor(private sync: Synchronizer) {
         super(sync);
     }
 
-    public execute(selection: Selection) {
+    public execute(selection: EditorSelectionObject) {
         console.info("DeleteRange$");
         const { endNode, endNodeOffset, startNode, startNodeOffset } =
             startEndTextNodes(selection);
+        if (startNode.parentElement === null) {
+            throw new Error("startNode.parentElement is null");
+        }
+        if (endNode.parentElement === null) {
+            throw new Error("endNode.parentElement is null");
+        }
         const startVNode = this.sync.findVDomNodeFrom(
             DomNode.fromExistingElement(startNode.parentElement)
         );
@@ -22,6 +29,12 @@ export class DeleteRange extends CommandBase {
             DomNode.fromExistingElement(endNode.parentElement)
         );
 
+        if (startNode.textContent === null) {
+            throw new Error("startNode.textContent is null");
+        }
+        if (endNode.textContent === null) {
+            throw new Error("endNode.textContent is null");
+        }
         const leftText =
             startNode.textContent.slice(0, startNodeOffset) +
             endNode.textContent.slice(endNodeOffset);

@@ -1,4 +1,5 @@
 import { DomNode } from "../../dom/dom-node";
+import { EditorSelectionObject } from "../../editor/editor.selection";
 import { TextFormat } from "../../enum/text-format";
 import { Synchronizer } from "../../syncronizer/syncronizer";
 import { VDomNode } from "../../vdom/vdom-node";
@@ -11,11 +12,17 @@ export class ShortcutFormat extends CommandBase {
         super(sync);
     }
 
-    public execute(textFormat: TextFormat, selection: Selection) {
+    public execute(textFormat: TextFormat, selection: EditorSelectionObject) {
         console.log("ShortcutFormat$");
         const { endNode, endNodeOffset, startNode, startNodeOffset } =
             startEndTextNodes(selection);
 
+        if (startNode.parentElement === null) {
+            throw new Error("startNode.parentElement is null");
+        }
+        if (endNode.parentElement === null) {
+            throw new Error("endNode.parentElement is null");
+        }
         const startSpan = DomNode.fromExistingElement(startNode.parentElement);
         const endSpan = DomNode.fromExistingElement(endNode.parentElement);
         const startVSpan = this.sync.findVDomNodeFrom(startSpan);
@@ -57,6 +64,9 @@ export class ShortcutFormat extends CommandBase {
             ).filter((vdomNode) => vdomNode.type === "span");
 
             // vSpans[0]
+            if (startNode.textContent === null) {
+                throw new Error("startNode.textContent is null");
+            }
             const startText = startNode.textContent;
             const startNonSelectedText = startText.slice(0, startNodeOffset);
             const startSelectedText = startText.slice(startNodeOffset);
@@ -72,6 +82,9 @@ export class ShortcutFormat extends CommandBase {
             }
 
             // vSpans[n-1]
+            if (endNode.textContent === null) {
+                throw new Error("endNode.textContent is null");
+            }
             const endText = endNode.textContent;
             const endSelectedText = endText.slice(0, endNodeOffset);
             const endNonSelectedText = endText.slice(endNodeOffset);

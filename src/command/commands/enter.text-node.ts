@@ -3,13 +3,14 @@ import { VDomNodeType } from "../../vdom/vdom-node.enum";
 import { Synchronizer } from "../../syncronizer/syncronizer";
 import { DomNode } from "../../dom/dom-node";
 import { CommandBase } from "../command.base";
+import { EditorSelectionObject } from "../../editor/editor.selection";
 
 export class EnterTextNode extends CommandBase {
     private constructor(private sync: Synchronizer) {
         super(sync);
     }
 
-    public execute(selection: Selection, textNode: Text) {
+    public execute(selection: EditorSelectionObject, textNode: Text) {
         console.info("EnterTextNode$");
         if (!(textNode.parentElement instanceof HTMLElement)) {
             throw new Error("parentElement is not HTMLElement");

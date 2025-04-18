@@ -1,4 +1,4 @@
-import { Editor } from "./editor";
+import { Editor } from "./editor/editor";
 import "./main.css";
 import "./debug";
 import { DomNode } from "./dom/dom-node";
@@ -16,6 +16,5 @@ dom.getElement().setAttribute("contenteditable", "true");
 const vDom = VDomNode.createRootNode();
 const sync = new Synchronizer(dom, vDom);
 const editor = new Editor(dom, vDom, sync);
-
 
 new EditorDebugger(editor);

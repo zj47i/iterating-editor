@@ -53,9 +53,9 @@ test("attach-detach", () => {
     expect(spanY.getChildren()).toEqual([span1, span2, span3]);
     expect(spanZ.getChildren()).toEqual([span4]);
 
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
-    spanA.attach(spanY, 2);
-    expect(consoleSpy).toHaveBeenCalledWith("node is already attached");
+    expect(() => {
+        spanA.attach(spanY, 2);
+    }).toThrow("node is already attached");
 
     spanX.detach(spanY);
     expect(spanX.getChildren()).toEqual([spanZ]);
