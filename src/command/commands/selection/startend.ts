@@ -1,4 +1,4 @@
-import { EditorSelectionObject } from "../../../editor/editor.selection";
+import { EditorSelectionObject } from "../../../editor.selection";
 
 export const startEndTextNodes = (selection: EditorSelectionObject) => {
     let { anchorNode, anchorOffset, focusNode, focusOffset } = selection;

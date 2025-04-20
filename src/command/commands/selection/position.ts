@@ -1,4 +1,4 @@
-import { EditorSelectionObject } from "../../../editor/editor.selection";
+import { EditorSelectionObject } from "../../../editor.selection";
 
 export const position = (
     selection: EditorSelectionObject,

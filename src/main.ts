@@ -1,4 +1,4 @@
-import { Editor } from "./editor/editor";
+import { Editor } from "./editor";
 import "./main.css";
 import "./debug";
 import { DomNode } from "./dom/dom-node";

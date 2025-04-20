@@ -1,4 +1,4 @@
-import { EditorSelectionObject } from "../../editor/editor.selection";
+import { EditorSelectionObject } from "../../editor.selection";
 import { Synchronizer } from "../../syncronizer/syncronizer";
 import { CommandBase } from "../command.base";
 

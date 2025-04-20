@@ -1,5 +1,5 @@
 import { DomNode } from "../../dom/dom-node";
-import { EditorSelectionObject } from "../../editor/editor.selection";
+import { EditorSelectionObject } from "../../editor.selection";
 import { TextFormat } from "../../enum/text-format";
 import { Synchronizer } from "../../syncronizer/syncronizer";
 import { VDomNode } from "../../vdom/vdom-node";

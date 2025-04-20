@@ -1,7 +1,7 @@
 import { Synchronizer } from "../../syncronizer/syncronizer";
 import { DomNode } from "../../dom/dom-node";
 import { CommandBase } from "../command.base";
-import { EditorSelectionObject } from "../../editor/editor.selection";
+import { EditorSelectionObject } from "../../editor.selection";
 
 export class BackspaceTextNode extends CommandBase {
     private constructor(private sync: Synchronizer) {

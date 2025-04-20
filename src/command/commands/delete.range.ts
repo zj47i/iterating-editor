@@ -5,7 +5,7 @@ import { DomNode } from "../../dom/dom-node";
 import { CommandBase } from "../command.base";
 import { startEndTextNodes } from "./selection/startend";
 import { position } from "./selection/position";
-import { EditorSelectionObject } from "../../editor/editor.selection";
+import { EditorSelectionObject } from "../../editor.selection";
 
 export class DeleteRange extends CommandBase {
     private constructor(private sync: Synchronizer) {

@@ -1,4 +1,4 @@
-import { Editor } from "./editor/editor";
+import { Editor } from "./editor";
 import { VDomNode } from "./vdom/vdom-node";
 
 const observer = new MutationObserver((mutations) => {

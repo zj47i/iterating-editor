@@ -1,8 +1,8 @@
-import { Command } from "../command/command";
-import { VDomNode } from "../vdom/vdom-node";
-import { VDomNodeType } from "../vdom/vdom-node.enum";
-import { Synchronizer } from "../syncronizer/syncronizer";
-import { DomNode } from "../dom/dom-node";
+import { Command } from "./command/command";
+import { VDomNode } from "./vdom/vdom-node";
+import { VDomNodeType } from "./vdom/vdom-node.enum";
+import { Synchronizer } from "./syncronizer/syncronizer";
+import { DomNode } from "./dom/dom-node";
 
 export class Editor {
     private command: Command;
@@ -37,6 +37,5 @@ export class Editor {
             }
             this.command.input(event);
         });
-
     }
 }
