@@ -13,7 +13,6 @@ import { DeleteRange } from "./commands/delete.range";
 import { ShortcutUndo } from "./commands/shortcut.undo";
 import { BackspaceTextNodeEmpty } from "./commands/backspace.text-node.empty";
 import { EditorSelection } from "../editor.selection";
-import { Editor } from "../editor";
 
 export class Command {
     constructor(private sync: Synchronizer) {}
