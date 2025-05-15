@@ -18,8 +18,6 @@ export class BackspaceParagraph extends CommandBase {
             event.preventDefault();
         } else {
             event.preventDefault();
-            return;
-            
         }
     }
 }

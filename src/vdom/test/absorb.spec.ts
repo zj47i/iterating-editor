@@ -6,5 +6,5 @@ test("absorb", () => {
     vdom.nestedParagraph1.absorb(vdom.nestedParagraph2);
     const len = vdom.nestedParagraph1.getChildren().length;
     expect(vdom.nestedParagraph1.getChildren()[len - 1]).toBe(vdom.span7);
-    expect(vdom.nestedParagraph2.parent).toBe(null);
+    expect(vdom.nestedParagraph2.getParent()).toBe(null);
 });

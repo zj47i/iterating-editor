@@ -1,23 +1,89 @@
-import { EditorNode } from "../editor-node.interface";
+import { EditorNode } from "../interface/editor-node.interface";
 import { TextFormat } from "../enum/text-format";
+import { Equatable } from "../interface/equatable.interface";
+import { UpdateHash } from "./decorator/update-hash";
 import { VDomNodeType } from "./vdom-node.enum";
 
-export class VDomNode implements EditorNode<VDomNode> {
-    public type: VDomNodeType;
-    public parent: VDomNode | null;
-    private children: VDomNode[];
-    private text?: string | null;
-    public format?: TextFormat[];
-
-    constructor(type: VDomNodeType) {
-        this.type = type;
-        this.parent = null;
-        this.children = [];
-        this.text = null;
-        this.format = [];
+export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
+    static HASH_LOCKED = false;
+    static VDOM_ID_SEQ = 0;
+    static lockHash() {
+        this.HASH_LOCKED = true;
+    }
+    static unlockHash() {
+        this.HASH_LOCKED = false;
     }
 
-    getParent(): VDomNode {
+    private parent: VDomNode | null;
+    private children: VDomNode[];
+    private text: string | null;
+    private format: TextFormat[];
+    private hash: string;
+    private structHash: string;
+
+    constructor(
+        readonly type: VDomNodeType,
+        readonly id = VDomNode.VDOM_ID_SEQ++
+    ) {
+        this.parent = null;
+        this.children = [];
+        this.format = [];
+
+        this.setHash();
+    }
+
+    public static createVSpan(text: string) {
+        const vSpan = new VDomNode(VDomNodeType.SPAN);
+        vSpan.setText(text);
+        return vSpan;
+    }
+
+    private fnv1a(str: string) {
+        let hash = 2166136261;
+        for (let i = 0; i < str.length; i++) {
+            hash ^= str.charCodeAt(i);
+            hash +=
+                (hash << 1) +
+                (hash << 4) +
+                (hash << 7) +
+                (hash << 8) +
+                (hash << 24);
+        }
+        return (hash >>> 0).toString(16);
+    }
+
+    private setHash() {
+        const data = JSON.stringify({
+            id: this.id,
+            text: this.type === VDomNodeType.SPAN ? this.getText() : null,
+            format: this.getFormats(),
+            childrenHash: this.getChildren().map((c: any) => c.hash),
+        });
+        this.hash = this.fnv1a(data);
+    }
+
+    public isEqual(other: VDomNode): boolean {
+        return this.hash === other.hash;
+    }
+
+    deepClone(): VDomNode {
+        VDomNode.lockHash();
+        const clone = new VDomNode(this.type, this.id);
+        clone.text = this.text;
+        clone.format = this.format.map((f) => f);
+        clone.hash = this.hash;
+
+        for (const child of this.children) {
+            const childClone = child.deepClone();
+            clone.attachLast(childClone);
+        }
+
+        clone.parent = null;
+        VDomNode.unlockHash();
+        return clone;
+    }
+
+    getParent(): VDomNode | null {
         return this.parent;
     }
 
@@ -25,10 +91,10 @@ export class VDomNode implements EditorNode<VDomNode> {
         return this.children;
     }
 
+    @UpdateHash()
     setFormat(format: TextFormat) {
         if (this.type !== "span") {
-            console.error("only span node can be bold");
-            return;
+            throw new Error("only span node can be bold");
         }
         if (!this.format) {
             this.format = [];
@@ -37,45 +103,62 @@ export class VDomNode implements EditorNode<VDomNode> {
             return;
         }
         this.format.push(format);
+        this.format.sort();
     }
 
     getFormats(): TextFormat[] {
         return this.format;
     }
 
+    @UpdateHash()
     public absorb(other: VDomNode) {
-        while (other.children.length > 0) {
-            const child = other.children.shift();
-            child.parent = null;
-            this.append(child);
+        for (const child of other.getChildren()) {
+            other.detach(child);
+            this.attachLast(child);
         }
-        other.remove();
+        const otherParent = other.parent;
+        if (otherParent) otherParent.detach(other);
     }
 
-    public empty() {
-        while (this.children.length > 0) {
-            this.children.shift().remove();
-        }
-    }
-
+    @UpdateHash()
     public remove() {
         const parent = this.parent;
         if (!parent) {
-            console.error("no parent");
-            return;
+            throw new Error("no parent");
         }
         const index = parent.children.indexOf(this);
         parent.children.splice(index, 1);
         this.parent = null;
     }
 
-    append(node: VDomNode) {
-        if (node.parent) {
-            console.error("node already has parent. detach first");
-            return;
+    public empty() {
+        while (this.children.length > 0) {
+            this.detach(this.getChildren()[0]);
         }
-        this.children.push(node);
+    }
+
+    attachLast(node: VDomNode) {
+        this.attach(node, this.getChildren().length);
+    }
+
+    @UpdateHash()
+    attach(node: VDomNode, at: number) {
+        if (node.parent) {
+            throw new Error("node already has parent. detach first");
+        }
+        this.getChildren().splice(at, 0, node);
         node.parent = this;
+    }
+
+    @UpdateHash()
+    detach(node: VDomNode) {
+        const at = this.getChildren().indexOf(node);
+        if (at === -1) {
+            throw new Error("node is not child");
+        }
+        const detached = this.getChildren().splice(at, 1)[0];
+        detached.parent = null;
+        return detached;
     }
 
     isEmpty() {
@@ -83,36 +166,41 @@ export class VDomNode implements EditorNode<VDomNode> {
     }
 
     public getText() {
+        if (this.type !== "span") {
+            throw new Error("only span node can have text");
+        }
+        if (this.text === null) {
+            throw new Error("text is null");
+        }
         return this.text;
     }
 
+    @UpdateHash()
     public setText(text: string) {
         if (this.type !== "span") {
-            console.error("only span node can have text");
-            return;
+            throw new Error("only span node can have text");
         }
         this.text = text;
     }
 
-    public spliceText(text: string, index = 0) {
+    @UpdateHash()
+    public insertText(text: string, index = 0) {
+        if (text === null || text === undefined) {
+            throw new Error("text is null");
+        }
         if (this.type !== "span") {
-            console.error("only span node can have text");
-            return;
+            throw new Error("only span node can have text");
         }
         if (this.text === null) {
-            this.text = "";
+            return this.setText(text);
         }
         this.text = this.text.slice(0, index) + text + this.text.slice(index);
     }
 
-    static createRootNode(): VDomNode {
-        return new VDomNode(VDomNodeType.ROOT);
-    }
-
     public findPathToAncestorNode(node: VDomNode): VDomNode[] {
         const path: VDomNode[] = [];
-        let current: VDomNode = this;
-        while (current !== node) {
+        let current: VDomNode | null = this;
+        while (current && current !== node) {
             path.push(current);
             current = current.parent;
         }
@@ -122,7 +210,7 @@ export class VDomNode implements EditorNode<VDomNode> {
 
     public findPathToRoot(): VDomNode[] {
         const path: VDomNode[] = [];
-        let current: VDomNode = this;
+        let current: VDomNode | null = this;
         while (current) {
             path.push(current);
             current = current.parent;
@@ -130,10 +218,14 @@ export class VDomNode implements EditorNode<VDomNode> {
         return path;
     }
 
+    static createRootNode(): VDomNode {
+        return new VDomNode(VDomNodeType.ROOT);
+    }
+
     public static findLowestCommonAncestor(
         node1: VDomNode,
         node2: VDomNode
-    ): VDomNode | undefined {
+    ): VDomNode {
         const path1 = node1.findPathToRoot();
         const path2 = node2.findPathToRoot();
         const setPath2 = new Set(path2);
@@ -142,7 +234,7 @@ export class VDomNode implements EditorNode<VDomNode> {
                 return node;
             }
         }
-        console.error("no common ancestor found");
+        throw new Error("no common ancestor");
     }
 
     public static traversalAfterPath(path: VDomNode[]) {
@@ -168,7 +260,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         }
 
         while (stack.length > 0) {
-            const current = stack.pop();
+            const current = stack.pop()!;
             const index = path.indexOf(current);
             if (index === -1) {
                 result.push(...VDomNode.preOrderTraversal(current));
@@ -183,23 +275,31 @@ export class VDomNode implements EditorNode<VDomNode> {
         return result;
     }
 
-    static from(element: HTMLElement) {
+    static from(element: HTMLElement): VDomNode {
         if (element.nodeName === "P") {
             return new VDomNode(VDomNodeType.PARAGRAPH);
         }
         if (element.nodeName === "SPAN") {
-            return new VDomNode(VDomNodeType.SPAN);
+            if (!element.textContent) {
+                throw new Error("textContent is null");
+            }
+            const vSpan = VDomNode.createVSpan(element.textContent);
+
+            return vSpan;
         }
+        throw new Error("unknown element");
     }
 
     public static traversalBeforePath(p: VDomNode[]): VDomNode[] {
         const path = Array.from(p);
-        const states = [];
-        const current = path.pop();
-        states.push(current);
+        const states: VDomNode[] = [];
+        states.push(path.pop()!);
         while (path.length > 0) {
-            const current = path.pop();
-            const parent = current.parent;
+            const current = path.pop()!;
+            const parent = current.getParent();
+            if (!parent) {
+                throw new Error("no parent");
+            }
             const index = parent.children.indexOf(current);
             if (index >= 1) {
                 for (let i = 0; i < index; i++) {
@@ -219,7 +319,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         const result: VDomNode[] = [];
 
         while (stack.length > 0) {
-            const current = stack.pop();
+            const current = stack.pop()!;
             result.push(current);
 
             for (let i = current.children.length - 1; i >= 0; i--) {
@@ -235,7 +335,7 @@ export class VDomNode implements EditorNode<VDomNode> {
         const stack: VDomNode[] = [this];
 
         while (stack.length > 0) {
-            const current = stack.shift();
+            const current = stack.shift()!;
             for (const child of current.children) {
                 result.push(child);
                 stack.push(child);
@@ -313,49 +413,61 @@ export class VDomNode implements EditorNode<VDomNode> {
 
     public getPreviousSibling() {
         if (!this.parent) {
-            console.error("no parent");
-            return;
+            throw null;
         }
         const index = this.parent.children.indexOf(this);
         if (index === 0) {
-            return;
+            return null;
         }
         return this.parent.children[index - 1];
     }
 
     public getNextSibling() {
         if (!this.parent) {
-            console.error("no parent");
-            return;
+            throw null;
         }
         const index = this.parent.children.indexOf(this);
         if (index === this.parent.children.length - 1) {
-            return;
+            return null;
         }
         return this.parent.children[index + 1];
     }
 
+    @UpdateHash()
     public addNextSiblings(nodes: VDomNode[]) {
         for (const node of nodes) {
             if (node.parent) {
-                console.error("node already has parent. detach first");
+                throw new Error("node already has parent. detach first");
             }
         }
 
-        this.parent.children.splice(
-            this.parent.children.indexOf(this) + 1,
-            0,
-            ...nodes
-        );
+        const parent = this.getParent();
+        if (!parent) {
+            throw new Error("no parent");
+        }
+
+        parent.children.splice(parent.children.indexOf(this) + 1, 0, ...nodes);
 
         nodes.forEach((node) => (node.parent = this.parent));
     }
 
-    public printTree(depth = 0): void {
+    public printTree({ depth = 0, prefix = "" }): void {
         const indent = " ".repeat(depth * 2);
-        const text = this.getText?.() ?? "";
+        let text;
+        if (this.type === VDomNodeType.SPAN) {
+            text = this.getText();
+        } else {
+            text = "";
+        }
         const formats = this.getFormats?.().join(", ") ?? "";
-        console.log(`${indent}${this.type}${text ? `: "${text}"` : ""}${formats ? ` [${formats}]` : ""}`);
-        this.getChildren().forEach(child => child.printTree(depth + 1));
+        console.log(
+            prefix,
+            `${indent}${this.type}${text ? `: "${text}"` : ""}${
+                formats ? ` [${formats}]` : ""
+            } - ${this.id} / ${this.hash}`
+        );
+        this.getChildren().forEach((child) =>
+            child.printTree({ depth: depth + 1, prefix })
+        );
     }
 }

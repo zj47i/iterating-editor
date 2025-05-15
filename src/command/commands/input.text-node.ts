@@ -8,9 +8,14 @@ export class InputTextNode extends CommandBase {
     }
 
     public execute(textNode: Text) {
-        console.info("textNodeInput$");
+        console.info("InputTextNode$");
+        if (textNode.parentElement === null) {
+            throw new Error("textNode.parentElement is null");
+        }
+        if (textNode.textContent === null) {
+            throw new Error("textNode.textContent is null");
+        }
         const span = DomNode.fromExistingElement(textNode.parentElement);
-        const spanVDomNode = this.sync.findVDomNodeFrom(span);
-        this.sync.setText(spanVDomNode, textNode.textContent, true);
+        this.sync.setTextFromDom(span, textNode.textContent);
     }
 }

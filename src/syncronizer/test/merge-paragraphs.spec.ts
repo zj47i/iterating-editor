@@ -32,7 +32,7 @@ describe("syncronizer", () => {
         expect(span2.getParent()).toBe(p1);
         expect(vP2.getChildren().length).toBe(0);
         expect(vP2.getParent()).toBe(null);
-        expect(p2.getElement().children.length).toBe(0);
-        expect(p2.getElement().parentElement).toBe(null);
+        expect(p2.getChildren().length).toBe(0);
+        expect(p2.getParent()).toBe(null);
     });
 });

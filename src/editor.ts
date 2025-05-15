@@ -3,54 +3,77 @@ import { VDomNode } from "./vdom/vdom-node";
 import { VDomNodeType } from "./vdom/vdom-node.enum";
 import { Synchronizer } from "./syncronizer/syncronizer";
 import { DomNode } from "./dom/dom-node";
+import { CompositionInputStateMachine } from "./state-machine/composition-input.state-machine";
 
-export class Editor {
-    private vdom: VDomNode;
-    private sync: Synchronizer;
+export class Editor extends EventTarget {
     private command: Command;
+    private compositionInputStateMachine: CompositionInputStateMachine;
 
-    constructor(private dom: DomNode) {
-        this.dom.getElement().contentEditable = "true";
-        this.vdom = VDomNode.createRootNode();
-        this.sync = new Synchronizer(dom, this.vdom);
-
-        this.sync.appendNewVDomNode(
+    constructor(
+        private dom: DomNode,
+        private vdom: VDomNode,
+        private sync: Synchronizer
+    ) {
+        super();
+        this.sync.appendNewVDomNodeOnInit(
             this.vdom,
             new VDomNode(VDomNodeType.PARAGRAPH)
         );
 
         this.command = new Command(this.sync);
-        this.addEventListener();
+        this.compositionInputStateMachine = new CompositionInputStateMachine(
+            this
+        ); // stateMachine을 저장
+        this.setupEventListeners();
     }
 
-    addEventListener() {
-        this.dom.getElement().addEventListener("keydown", (event) => {
-            console.log("keydown event:", event);
+    private setupEventListeners() {
+        const element = this.dom.getElement();
+
+        element.addEventListener("keydown", (event) => {
             if (!(event instanceof KeyboardEvent)) {
-                console.error("event is not KeyboardEvent");
-                return;
+                throw new Error("event is not KeyboardEvent");
             }
+            console.log("keydown event:", event);
             this.command.keydown(event);
         });
 
-        this.dom.getElement().addEventListener("input", (event) => {
-            console.log("input event:", event);
-            if (!(event instanceof InputEvent)) {
-                console.error("event is not InputEvent");
+        element.addEventListener("compositionstart", (event) => {
+            this.compositionInputStateMachine.transition(event);
+        });
+
+        element.addEventListener("compositionupdate", (event) => {
+            this.compositionInputStateMachine.transition(event);
+        });
+
+        element.addEventListener("compositionend", (event) => {
+            this.compositionInputStateMachine.transition(event);
+        });
+
+        element.addEventListener("input", (event) => {
+            if (
+                this.compositionInputStateMachine.getState().getName() !==
+                "IdleState"
+            ) {
                 return;
+            }
+
+            if (!(event instanceof InputEvent)) {
+                throw new Error("event is not InputEvent");
             }
             this.command.input(event);
         });
 
-        this.dom.getElement().addEventListener("click", (event) => {
-            document.addEventListener("selectionchange", () => {
-                const selection = document.getSelection();
-                const s = document.getElementById("@selection");
-                s.innerHTML = `anchorNode: ${selection.anchorNode.nodeName}<br>
-                anchorOffset: ${selection.anchorOffset}<br>
-                focusNode: ${selection.focusNode.nodeName}<br>
-                focusOffset: ${selection.focusOffset}<br>`;
-            });
-        });
+        this.addEventListener(
+            "editorinput",
+            (event: CustomEvent<InputEvent>) => {
+                // CompositionInputStateMachine이 dispatch한 editorinput 이벤트 수신
+                console.log("editorinput event:", event);
+                if (!(event instanceof CustomEvent)) {
+                    throw new Error("event is not InputEvent");
+                }
+                this.command.input(event);
+            }
+        );
     }
 }

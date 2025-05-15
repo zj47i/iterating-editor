@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>입력 이벤트 누적 로그</title>
+  <style>
+    #editor {
+      border: 1px solid #ccc;
+      padding: 10px;
+      min-height: 100px;
+      outline: none;
+    }
+    #log {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #888;
+      font-family: monospace;
+      white-space: pre-wrap;
+      background: #f9f9f9;
+      height: 300px;
+      overflow-y: auto;
+    }
+    #printArea {
+      display: none;
+    }
+    @media print {
+      body * {
+        display: none;
+      }
+      #printArea {
+        display: block;
+        white-space: pre-wrap;
+        font-family: monospace;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>입력 이벤트 누적 추적</h2>
+  <div id="editor" contenteditable="true"></div>
+  <button onclick="printLogTextOnly()">로그 텍스트 인쇄</button>
+  <button onclick="clearLog()">로그 초기화</button>
+  <div id="log"></div>
+
+  <!-- 인쇄용 숨김 영역 -->
+  <div id="printArea"></div>
+
+  <script>
+    const editor = document.getElementById("editor");
+    const logBox = document.getElementById("log");
+    const printArea = document.getElementById("printArea");
+
+    const log = (msg) => {
+      const line = document.createElement("div");
+      line.textContent = msg;
+      logBox.appendChild(line);
+      logBox.scrollTop = logBox.scrollHeight;
+    };
+
+    const events = [
+      "keydown", "keypress", "keyup",
+      "beforeinput", "input",
+      "compositionstart", "compositionupdate", "compositionend",
+      "paste", "cut", "copy",
+    ];
+
+    events.forEach(type => {
+      editor.addEventListener(type, (e) => {
+        if (e.type === "keydown") {
+          log('=========================================================');
+        }
+        if (e.type === "beforeinput") {
+          console.log(e);
+        }
+        log(`[${type}] inputType=${e.inputType || ""}`);
+      });
+    });
+
+    function printLogTextOnly() {
+      const text = Array.from(logBox.children)
+        .map(line => line.textContent)
+        .join('\n');
+
+      printArea.textContent = text;
+      window.print();
+    }
+
+    function clearLog() {
+      logBox.innerHTML = '';
+    }
+  </script>
+</body>
+</html>

@@ -26,9 +26,9 @@ describe("syncronizer", () => {
     });
 
     test("findVDomNodeFrom", () => {
-        const vSpan3 = new VDomNode(VDomNodeType.SPAN);
-        const vSpan4 = new VDomNode(VDomNodeType.SPAN);
-        const vSpan5 = new VDomNode(VDomNodeType.SPAN);
+        const vSpan3 = VDomNode.createVSpan("");
+        const vSpan4 = VDomNode.createVSpan("");
+        const vSpan5 = VDomNode.createVSpan("");
         sync.appendNewVDomNode(vP1, vSpan5);
         sync.addNewNextSiblings(vSpan1, [vSpan3, vSpan4]);
 
@@ -39,6 +39,5 @@ describe("syncronizer", () => {
         expect(vSpan3).toEqual(sync.findVDomNodeFrom(span3));
         expect(vSpan4).toEqual(sync.findVDomNodeFrom(span4));
         expect(vSpan5).toEqual(sync.findVDomNodeFrom(span5));
-
     });
 });
