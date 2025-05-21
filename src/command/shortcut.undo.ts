@@ -1,6 +1,6 @@
-import { EditorSelectionObject } from "../../editor.selection";
-import { Synchronizer } from "../../syncronizer/syncronizer";
-import { CommandBase } from "../command.base";
+import { EditorSelectionObject } from "../editor.selection.ts";
+import { Synchronizer } from "../syncronizer/syncronizer.ts";
+import { CommandBase } from "./command.base.ts";
 
 export class ShortcutUndo extends CommandBase {
     private constructor(private sync: Synchronizer) {

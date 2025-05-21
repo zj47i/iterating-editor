@@ -1,11 +1,11 @@
-import { DomNode } from "../../dom/dom-node";
-import { EditorSelectionObject } from "../../editor.selection";
-import { TextFormat } from "../../enum/text-format";
-import { Synchronizer } from "../../syncronizer/syncronizer";
-import { VDomNode } from "../../vdom/vdom-node";
-import { VDomNodeType } from "../../vdom/vdom-node.enum";
-import { CommandBase } from "../command.base";
-import { startEndTextNodes } from "./selection/startend";
+import { DomNode } from "../dom/dom-node.ts";
+import { EditorSelectionObject } from "../editor.selection.ts";
+import { TextFormat } from "../enum/text-format.ts";
+import { Synchronizer } from "../syncronizer/syncronizer.ts";
+import { VDomNode } from "../vdom/vdom-node.ts";
+import { VDomNodeType } from "../vdom/vdom-node.enum.ts";
+import { CommandBase } from "./command.base.ts";
+import { startEndTextNodes } from "./selection/startend.ts";
 
 export class ShortcutFormat extends CommandBase {
     private constructor(private sync: Synchronizer) {

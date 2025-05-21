@@ -28,7 +28,6 @@ class CompositionStartState implements State {
     getName(): string {
         return this.name;
     }
-
 }
 
 class CompositionUpdateState implements State {
@@ -46,13 +45,24 @@ class CompositionUpdateState implements State {
 }
 
 // 상태 기계 정의
-export class CompositionInputStateMachine {
+export class CompositionStateMachine {
     private _currentState: State;
     private _target: EventTarget;
 
     constructor(target: EventTarget) {
         this._currentState = new IdleState();
         this._target = target;
+        this._target.addEventListener("compositionstart", (event) => {
+            this.transition(event);
+        });
+
+        this._target.addEventListener("compositionupdate", (event) => {
+            this.transition(event);
+        });
+
+        this._target.addEventListener("compositionend", (event) => {
+            this.transition(event);
+        });
     }
 
     transition(event: Event): void {

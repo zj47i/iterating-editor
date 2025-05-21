@@ -1,4 +1,4 @@
-import { position } from "../command/commands/selection/position";
+import { position } from "../command/selection/position";
 import { DomNode } from "../dom/dom-node";
 import { EditorSelection } from "../editor.selection";
 import { TextFormat } from "../enum/text-format";
@@ -145,7 +145,7 @@ export class Synchronizer {
         paragraph1.absorb(paragraph2);
     }
 
-    public appendNewVDomNodeOnInit(vParent: VDomNode, vChild: VDomNode) {
+    public appendNewVDomNodeWithoutHook(vParent: VDomNode, vChild: VDomNode) {
         const parent = this.findDomNodeFrom(vParent);
         const child = DomNode.from(vChild);
         vParent.attachLast(vChild);

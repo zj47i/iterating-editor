@@ -1,6 +1,6 @@
-import { Synchronizer } from "../../syncronizer/syncronizer";
-import { DomNode } from "../../dom/dom-node";
-import { CommandBase } from "../command.base";
+import { Synchronizer } from "../syncronizer/syncronizer.ts";
+import { DomNode } from "../dom/dom-node.ts";
+import { CommandBase } from "./command.base.ts";
 
 export class BackspaceParagraph extends CommandBase {
     private constructor(private sync: Synchronizer) {

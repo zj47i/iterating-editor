@@ -1,21 +1,60 @@
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandKeyboardEvent } from "./command.keyboard-event.enum";
 import { DomNode } from "../dom/dom-node";
-import { EnterParagraph } from "./commands/enter.paragraph";
-import { EnterTextNode } from "./commands/enter.text-node";
-import { BackspaceParagraph } from "./commands/backspace.paragraph";
-import { InputParagraph } from "./commands/input.paragraph";
-import { InputTextNode } from "./commands/input.text-node";
-import { ShortcutFormat } from "./commands/shortcut.format";
+import { EnterParagraph } from "./enter.paragraph.ts";
+import { EnterTextNode } from "./enter.text-node.ts";
+import { BackspaceParagraph } from "./backspace.paragraph.ts";
+import { InputParagraph } from "./input.paragraph.ts";
+import { InputTextNode } from "./input.text-node.ts";
+import { ShortcutFormat } from "./shortcut.format.ts";
 import { TextFormat } from "../enum/text-format";
-import { BackspaceTextNode } from "./commands/backspace.text-node";
-import { DeleteRange } from "./commands/delete.range";
-import { ShortcutUndo } from "./commands/shortcut.undo";
-import { BackspaceTextNodeEmpty } from "./commands/backspace.text-node.empty";
+import { BackspaceTextNode } from "./backspace.text-node.ts";
+import { DeleteRange } from "./delete.range.ts";
+import { ShortcutUndo } from "./shortcut.undo.ts";
+import { BackspaceTextNodeEmpty } from "./backspace.text-node.empty.ts";
 import { EditorSelection } from "../editor.selection";
+import { CompositionStateMachine } from "../state-machine/composition.state-machine.ts";
 
 export class Command {
-    constructor(private sync: Synchronizer) {}
+    constructor(
+        private sync: Synchronizer,
+        private target: EventTarget,
+        private compositionStateMachine: CompositionStateMachine
+    ) {
+        this.target.addEventListener(
+            "editorinput",
+            (event: CustomEvent<InputEvent>) => {
+                // CompositionInputStateMachine이 dispatch한 editorinput 이벤트 수신
+                console.log("editorinput event:", event);
+                if (!(event instanceof CustomEvent)) {
+                    throw new Error("event is not InputEvent");
+                }
+                this.input(event);
+            }
+        );
+
+        this.target.addEventListener("keydown", (event) => {
+            if (!(event instanceof KeyboardEvent)) {
+                throw new Error("event is not KeyboardEvent");
+            }
+            console.log("keydown event:", event);
+            this.keydown(event);
+        });
+
+        this.target.addEventListener("input", (event) => {
+            if (
+                this.compositionStateMachine.getState().getName() !==
+                "IdleState"
+            ) {
+                return;
+            }
+
+            if (!(event instanceof InputEvent)) {
+                throw new Error("event is not InputEvent");
+            }
+            this.input(event);
+        });
+    }
 
     keydown(event: KeyboardEvent) {
         const selection = EditorSelection.getSelection();
