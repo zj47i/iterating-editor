@@ -1,0 +1,90 @@
+import { Synchronizer } from "../syncronizer/syncronizer.ts";
+import { DomNode } from "../dom/dom-node.ts";
+import { position } from "./selection/position.ts";
+
+export class BackspaceHandler {
+    constructor(private sync: Synchronizer) {}
+
+    handleParagraph(paragraph: DomNode, event: KeyboardEvent) {
+        // 단락에서 백스페이스 처리
+        console.info("BackspaceParagraph$", paragraph);
+        const vParagraph = this.sync.findVDomNodeFrom(paragraph);
+        const vPreviousParagraph = vParagraph.getPreviousSibling();
+        if (vPreviousParagraph) {
+            // 삭제 전에 이전 단락의 DOM과 커서 위치를 먼저 계산
+            const previousParagraphDom = paragraph.getPreviousSibling();
+            let setCursor = false;
+            if (previousParagraphDom) {
+                console.info("previousParagraphDom$", previousParagraphDom);
+                const children = previousParagraphDom.getChildren();
+                if (children.length > 0) {
+                    const lastSpan = children[children.length - 1];
+                    const textNode = lastSpan.getElement().firstChild;
+                    if (textNode instanceof Text) {
+                        position(textNode, textNode.length);
+                        setCursor = true;
+                    }
+                }
+            }
+            // 만약 위에서 커서를 못 옮겼으면(비어있는 단락) 단락 자체에 커서
+            if (!setCursor && previousParagraphDom) {
+                position(previousParagraphDom.getElement(), 0);
+            }
+            // 마지막에 삭제
+            this.sync.remove(vParagraph);
+            event.preventDefault();
+        } else {
+            event.preventDefault();
+        }
+    }
+
+    handleTextNode(textNode: Text, event: KeyboardEvent) {
+        // 텍스트 노드에서 백스페이스 처리
+        if (textNode.parentElement === null) {
+            throw new Error("textNode.parentElement is null");
+        }
+        const span = DomNode.fromExistingElement(textNode.parentElement);
+        const paragraph = span.getParent();
+        if (paragraph === null) {
+            throw new Error("span.getParent() is null");
+        }
+        const paragraphVDomNode = this.sync.findVDomNodeFrom(paragraph);
+        const previousParagraphVDomNode =
+            paragraphVDomNode.getPreviousSibling();
+        if (previousParagraphVDomNode) {
+            this.sync.merge(previousParagraphVDomNode, paragraphVDomNode);
+            position(textNode, 0);
+        }
+        event.preventDefault();
+    }
+
+    handleEmptyTextNode(textNode: Text) {
+        // 비어있는 텍스트 노드에서 백스페이스 처리
+        if (textNode.parentElement === null) {
+            throw new Error("textNode.parentElement is null");
+        }
+        const span = DomNode.fromExistingElement(textNode.parentElement);
+        const vSpan = this.sync.findVDomNodeFrom(span);
+        const previousVSpan = vSpan.getPreviousSibling();
+        if (previousVSpan) {
+            this.sync.merge(previousVSpan, vSpan);
+            position(
+                DomNode.fromVdom(previousVSpan).getElement(),
+                previousVSpan.getText().length
+            );
+        } else {
+            const parent = span.getParent();
+            if (parent === null) {
+                throw new Error("span.getParent() is null");
+            }
+            const nextVSpan = vSpan.getNextSibling();
+            this.sync.remove(vSpan);
+            // position 함수는 외부에서 import 필요
+            if (nextVSpan) {
+                position(DomNode.fromVdom(nextVSpan).getElement(), 0);
+            } else {
+                position(parent.getElement(), 0);
+            }
+        }
+    }
+}

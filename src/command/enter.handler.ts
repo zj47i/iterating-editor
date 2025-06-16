@@ -1,16 +1,25 @@
-import { VDomNode } from "../vdom/vdom-node.ts";
-import { VDomNodeType } from "../vdom/vdom-node.enum.ts";
 import { Synchronizer } from "../syncronizer/syncronizer.ts";
 import { DomNode } from "../dom/dom-node.ts";
-import { CommandBase } from "./command.base.ts";
-import { EditorSelectionObject } from "../editor.selection.ts";
+import { VDomNode } from "../vdom/vdom-node.ts";
+import { VDomNodeType } from "../vdom/vdom-node.enum.ts";
+import { position } from "./selection/position.ts";
 
-export class EnterTextNode extends CommandBase {
-    private constructor(private sync: Synchronizer) {
-        super(sync);
+export class EnterHandler {
+    constructor(private sync: Synchronizer) {}
+
+    handleParagraph(paragraph: DomNode) {
+        // 단락에서 Enter 처리
+        const vParagraph = this.sync.findVDomNodeFrom(paragraph);
+        const newVParagraph = new VDomNode(VDomNodeType.PARAGRAPH);
+        this.sync.addNewNextSiblings(vParagraph, [newVParagraph]);
+        const nextSiblingParagraph = paragraph.getNextSibling();
+        if (!nextSiblingParagraph) {
+            throw new Error("nextSiblingParagraph is null");
+        }
+        position(nextSiblingParagraph.getElement(), 0);
     }
 
-    public execute(selection: EditorSelectionObject, textNode: Text) {
+    handleTextNode(textNode: Text, cursorPosition: number) {
         console.info("EnterTextNode$");
         if (!(textNode.parentElement instanceof HTMLElement)) {
             throw new Error("parentElement is not HTMLElement");
@@ -39,7 +48,6 @@ export class EnterTextNode extends CommandBase {
         }
 
         const textLength = textNode.textContent.length;
-        const cursorPosition = selection.anchorOffset;
 
         if (cursorPosition !== textLength) {
             const vSpan = this.sync.findVDomNodeFrom(span);
@@ -59,11 +67,7 @@ export class EnterTextNode extends CommandBase {
 
         if (cursorPosition === textLength) {
             const newP = nextSiblingOfParagraph;
-            const range = document.createRange();
-            range.setStart(newP.getElement(), 0);
-            range.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(range);
+            position(newP.getElement(), 0);
         } else {
             const newSpan = nextSiblingOfParagraph.getChildren()[0];
             if (newSpan === undefined) {
@@ -73,11 +77,7 @@ export class EnterTextNode extends CommandBase {
             if (!(textNode instanceof Text)) {
                 throw new Error("textNode is not Text");
             }
-            const range = document.createRange();
-            range.setStart(textNode, 0);
-            range.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(range);
+            position(textNode, 0);
         }
     }
 }

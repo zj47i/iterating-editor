@@ -1,4 +1,3 @@
-import { EditorSelectionObject } from "../editor.selection.ts";
 import { Synchronizer } from "../syncronizer/syncronizer.ts";
 import { CommandBase } from "./command.base.ts";
 
@@ -7,7 +6,7 @@ export class ShortcutUndo extends CommandBase {
         super(sync);
     }
 
-    public execute(selection: EditorSelectionObject) {
+    public execute() {
         console.log("ShortcutUndo$");
         this.sync.undo();
     }

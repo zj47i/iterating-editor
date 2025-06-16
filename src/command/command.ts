@@ -1,26 +1,28 @@
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandKeyboardEvent } from "./command.keyboard-event.enum";
 import { DomNode } from "../dom/dom-node";
-import { EnterParagraph } from "./enter.paragraph.ts";
-import { EnterTextNode } from "./enter.text-node.ts";
-import { BackspaceParagraph } from "./backspace.paragraph.ts";
 import { InputParagraph } from "./input.paragraph.ts";
 import { InputTextNode } from "./input.text-node.ts";
 import { ShortcutFormat } from "./shortcut.format.ts";
 import { TextFormat } from "../enum/text-format";
-import { BackspaceTextNode } from "./backspace.text-node.ts";
 import { DeleteRange } from "./delete.range.ts";
 import { ShortcutUndo } from "./shortcut.undo.ts";
-import { BackspaceTextNodeEmpty } from "./backspace.text-node.empty.ts";
-import { EditorSelection } from "../editor.selection";
+import { BackspaceHandler } from "./backspace.handler.ts";
 import { CompositionStateMachine } from "../state-machine/composition.state-machine.ts";
+import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
+import { EnterHandler } from "./enter.handler.ts";
 
 export class Command {
+    private backspaceHandler: BackspaceHandler;
+    private enterHandler: EnterHandler;
     constructor(
         private sync: Synchronizer,
         private target: EventTarget,
-        private compositionStateMachine: CompositionStateMachine
+        private compositionStateMachine: CompositionStateMachine,
+        private selectionStateMachine: SelectionStateMachine
     ) {
+        this.backspaceHandler = new BackspaceHandler(sync);
+        this.enterHandler = new EnterHandler(sync);
         this.target.addEventListener(
             "editorinput",
             (event: CustomEvent<InputEvent>) => {
@@ -57,33 +59,42 @@ export class Command {
     }
 
     keydown(event: KeyboardEvent) {
-        const selection = EditorSelection.getSelection();
-        if (event.key === CommandKeyboardEvent.ENTER) {
-            console.info(CommandKeyboardEvent.ENTER);
+        if (event.key === "Enter") {
+            console.info("Enter key pressed");
             event.preventDefault();
-            if (selection.anchorNode.nodeType === Node.TEXT_NODE) {
-                if (!(selection.anchorNode instanceof Text)) {
-                    throw new Error("anchorNode is not Text");
+            if (this.selectionStateMachine.isCursor()) {
+                const cursorState = this.selectionStateMachine.getState();
+                if (cursorState.startContainer instanceof Text) {
+                    this.enterHandler.handleTextNode(
+                        cursorState.startContainer,
+                        cursorState.startOffset
+                    );
+                } else if (
+                    cursorState.startContainer instanceof HTMLElement &&
+                    cursorState.startContainer.nodeName === "P"
+                ) {
+                    this.enterHandler.handleParagraph(
+                        DomNode.fromExistingElement(cursorState.startContainer)
+                    );
                 }
-                const enterTextNode = EnterTextNode.getInstance<EnterTextNode>(
+            } else if (this.selectionStateMachine.isRange()) {
+                const deleteRange = DeleteRange.getInstance<DeleteRange>(
                     this.sync
                 );
-                enterTextNode.execute(selection, selection.anchorNode);
-            } else if (
-                selection.anchorNode instanceof HTMLElement &&
-                selection.anchorNode.nodeName === "P"
-            ) {
-                const enterParagraph =
-                    EnterParagraph.getInstance<EnterParagraph>(this.sync);
-                enterParagraph.execute(
-                    selection,
-                    DomNode.fromExistingElement(selection.anchorNode)
-                );
+                deleteRange.execute(this.selectionStateMachine);
+                this.keydown(event); // 재귀 호출로 Enter 처리
             }
         }
 
+        const selection = window.getSelection();
+        if (!selection) {
+            throw new Error("Selection is null");
+        }
+        if (!selection.anchorNode) {
+            throw new Error("Selection anchorNode is null");
+        }
         if (event.key === CommandKeyboardEvent.BACKSPACE) {
-            console.info(CommandKeyboardEvent.BACKSPACE);
+            console.info("Backspace key pressed");
             if (
                 selection.anchorNode.nodeType === Node.TEXT_NODE &&
                 selection.anchorOffset === 0
@@ -91,10 +102,7 @@ export class Command {
                 if (!(selection.anchorNode instanceof Text)) {
                     throw new Error("anchorNode is not Text");
                 }
-                const backspaceTextNode =
-                    BackspaceTextNode.getInstance<BackspaceTextNode>(this.sync);
-                backspaceTextNode.execute(
-                    selection,
+                this.backspaceHandler.handleTextNode(
                     selection.anchorNode,
                     event
                 );
@@ -107,26 +115,13 @@ export class Command {
                     throw new Error("anchorNode is not Text");
                 }
                 event.preventDefault();
-                const backspaceTextNodeEmpty =
-                    BackspaceTextNodeEmpty.getInstance<BackspaceTextNodeEmpty>(
-                        this.sync
-                    );
-                backspaceTextNodeEmpty.execute(
-                    selection,
-                    selection.anchorNode,
-                    event
-                );
+                this.backspaceHandler.handleEmptyTextNode(selection.anchorNode);
             }
             if (selection.anchorNode.nodeName === "P") {
                 if (!(selection.anchorNode instanceof HTMLElement)) {
                     throw new Error("anchorNode is not HTMLElement");
                 }
-                const backspaceParagraph =
-                    BackspaceParagraph.getInstance<BackspaceParagraph>(
-                        this.sync
-                    );
-
-                backspaceParagraph.execute(
+                this.backspaceHandler.handleParagraph(
                     DomNode.fromExistingElement(selection.anchorNode),
                     event
                 );
@@ -138,7 +133,7 @@ export class Command {
                 this.sync
             );
             event.preventDefault();
-            shortcutFormat.execute(TextFormat.BOLD, selection);
+            shortcutFormat.execute(TextFormat.BOLD, this.selectionStateMachine);
         }
 
         if (event.key.toUpperCase() === "Z" && event.ctrlKey) {
@@ -146,18 +141,24 @@ export class Command {
                 this.sync
             );
             event.preventDefault();
-            shortcutUndo.execute(selection);
+            shortcutUndo.execute();
         }
 
         if (event.key === CommandKeyboardEvent.DELETE) {
             event.preventDefault();
             const deleteRange = DeleteRange.getInstance<DeleteRange>(this.sync);
-            deleteRange.execute(selection);
+            deleteRange.execute(this.selectionStateMachine);
         }
     }
 
     input(event: CustomEvent<InputEvent> | InputEvent) {
-        const selection = EditorSelection.getSelection();
+        const selection = window.getSelection();
+        if (!selection) {
+            throw new Error("Selection is null");
+        }
+        if (!selection.anchorNode) {
+            throw new Error("Selection anchorNode is null");
+        }
         const element = selection.anchorNode;
         if (element.nodeType === Node.TEXT_NODE) {
             if (!(element instanceof Text)) {
@@ -172,7 +173,7 @@ export class Command {
             if (parent.getNodeName() === "P") {
                 const inputParagraph =
                     InputParagraph.getInstance<InputParagraph>(this.sync);
-                inputParagraph.execute(textNode, parent, selection);
+                inputParagraph.execute(textNode, parent);
                 return;
             }
 
@@ -180,7 +181,7 @@ export class Command {
                 const inputTextNode = InputTextNode.getInstance<InputParagraph>(
                     this.sync
                 );
-                inputTextNode.execute(textNode, parent, selection);
+                inputTextNode.execute(textNode, parent);
                 return;
             }
         }

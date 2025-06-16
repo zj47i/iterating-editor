@@ -3,19 +3,23 @@ import { VDomNodeType } from "../vdom/vdom-node.enum.ts";
 import { Synchronizer } from "../syncronizer/syncronizer.ts";
 import { DomNode } from "../dom/dom-node.ts";
 import { CommandBase } from "./command.base.ts";
-import { startEndTextNodes } from "./selection/startend.ts";
 import { position } from "./selection/position.ts";
-import { EditorSelectionObject } from "../editor.selection.ts";
+import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
 
 export class DeleteRange extends CommandBase {
     private constructor(private sync: Synchronizer) {
         super(sync);
     }
 
-    public execute(selection: EditorSelectionObject) {
+    // 텍스트노드가 기준일때만 동작하는듯 한데, 다시한번 쭉 살펴보기
+
+    public execute(selectionStateMachine: SelectionStateMachine) {
         console.info("DeleteRange$");
-        const { endNode, endNodeOffset, startNode, startNodeOffset } =
-            startEndTextNodes(selection);
+        const endNode = selectionStateMachine.getState().endContainer;
+        const endNodeOffset = selectionStateMachine.getState().endOffset;
+        const startNode = selectionStateMachine.getState().startContainer;
+        const startNodeOffset = selectionStateMachine.getState().startOffset;
+
         if (startNode.parentElement === null) {
             throw new Error("startNode.parentElement is null");
         }
@@ -68,6 +72,6 @@ export class DeleteRange extends CommandBase {
         if (!firstChild) {
             throw new Error("firstChild is null");
         }
-        position(selection, firstChild, startNodeOffset);
+        position(firstChild, startNodeOffset);
     }
 }

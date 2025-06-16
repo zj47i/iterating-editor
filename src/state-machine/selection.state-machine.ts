@@ -1,81 +1,73 @@
 interface State {
+    startContainer: Node;
+    startOffset: number;
+    endContainer: Node;
+    endOffset: number;
     onEvent(input: string): State;
     getName(): string;
 }
 
-class IdleState implements State {
-    name = "IdleState";
+class CursorState implements State {
+    startContainer: Node;
+    startOffset: number;
+    endContainer: Node;
+    endOffset: number;
+
+    constructor(container: Node, offset: number) {
+        this.startContainer = container;
+        this.startOffset = offset;
+        this.endContainer = container;
+        this.endOffset = offset;
+    }
+
     onEvent(input: string): State {
         if (input === "selectionchange") {
             const selection = document.getSelection();
             if (selection && selection.rangeCount > 0) {
                 const range = selection.getRangeAt(0);
-                if (
-                    range.startContainer === range.endContainer &&
-                    range.startOffset === range.endOffset
-                ) {
-                    return new CursorState();
+                if (selection.isCollapsed) {
+                    this.startContainer = range.startContainer;
+                    this.startOffset = range.startOffset;
+                    this.endContainer = range.startContainer;
+                    this.endOffset = range.startOffset;
                 } else {
                     return new RangeState(
                         range.startContainer,
-                        range.endContainer,
                         range.startOffset,
-                        range.endOffset
+                        range.endContainer,
+                        range.endOffset,
+                        selection.direction
                     );
                 }
             }
         }
         return this;
     }
-    getName(): string {
-        return this.name;
-    }
-}
 
-class CursorState implements State {
-    name = "CursorState";
-    onEvent(input: string): State {
-        if (input === "selectionchange") {
-            const selection = document.getSelection();
-            if (selection && selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                if (
-                    range.startContainer !== range.endContainer ||
-                    range.startOffset !== range.endOffset
-                ) {
-                    return new RangeState(
-                        range.startContainer,
-                        range.endContainer,
-                        range.startOffset,
-                        range.endOffset
-                    );
-                }
-            }
-        }
-        return this;
-    }
     getName(): string {
-        return this.name;
+        return "CursorState";
     }
 }
 
 class RangeState implements State {
-    name = "RangeState";
-    private startContainer: Node;
-    private endContainer: Node;
-    private startOffset: number;
-    private endOffset: number;
+    startContainer: Node;
+    startOffset: number;
+    endContainer: Node;
+    endOffset: number;
+    direction: string;
 
     constructor(
         startContainer: Node,
-        endContainer: Node,
         startOffset: number,
-        endOffset: number
+        endContainer: Node,
+        endOffset: number,
+        direction: string
     ) {
         this.startContainer = startContainer;
-        this.endContainer = endContainer;
         this.startOffset = startOffset;
+        this.endContainer = endContainer;
         this.endOffset = endOffset;
+        this.direction = direction;
     }
 
     onEvent(input: string): State {
@@ -83,11 +75,17 @@ class RangeState implements State {
             const selection = document.getSelection();
             if (selection && selection.rangeCount > 0) {
                 const range = selection.getRangeAt(0);
-                if (
-                    range.startContainer === range.endContainer &&
-                    range.startOffset === range.endOffset
-                ) {
-                    return new CursorState();
+                if (selection.isCollapsed) {
+                    return new CursorState(
+                        range.startContainer,
+                        range.startOffset
+                    );
+                } else {
+                    this.startContainer = range.startContainer;
+                    this.startOffset = range.startOffset;
+                    this.endContainer = range.endContainer;
+                    this.endOffset = range.endOffset;
+                    this.direction = selection.direction;
                 }
             }
         }
@@ -95,21 +93,7 @@ class RangeState implements State {
     }
 
     getName(): string {
-        return this.name;
-    }
-
-    getRangeDetails(): {
-        startContainer: Node;
-        endContainer: Node;
-        startOffset: number;
-        endOffset: number;
-    } {
-        return {
-            startContainer: this.startContainer,
-            endContainer: this.endContainer,
-            startOffset: this.startOffset,
-            endOffset: this.endOffset,
-        };
+        return "RangeState";
     }
 }
 
@@ -117,10 +101,8 @@ export class SelectionStateMachine {
     private _currentState: State;
 
     constructor() {
-        this._currentState = new IdleState();
+        this._currentState = new CursorState(document.body, 0);
         document.addEventListener("selectionchange", (event) => {
-            console.log("selectionchange event:", event);
-            console.log(event.target);
             this.transition(event);
         });
     }
@@ -134,11 +116,6 @@ export class SelectionStateMachine {
         }
 
         const nextState = this._currentState.onEvent(eventType);
-
-        console.log(
-            `Transitioning from ${this._currentState.getName()} to ${nextState.getName()} on event ${eventType}`
-        );
-
         this._currentState = nextState;
     }
 
@@ -146,23 +123,11 @@ export class SelectionStateMachine {
         return this._currentState;
     }
 
-    isCursorSelection(): boolean {
+    isCursor(): boolean {
         return this._currentState instanceof CursorState;
     }
 
-    isRangeSelection(): boolean {
+    isRange(): boolean {
         return this._currentState instanceof RangeState;
-    }
-
-    getRangeDetails(): {
-        startContainer: Node;
-        endContainer: Node;
-        startOffset: number;
-        endOffset: number;
-    } | null {
-        if (this._currentState instanceof RangeState) {
-            return this._currentState.getRangeDetails();
-        }
-        return null;
     }
 }

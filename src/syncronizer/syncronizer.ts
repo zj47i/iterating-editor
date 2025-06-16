@@ -1,6 +1,5 @@
 import { position } from "../command/selection/position";
 import { DomNode } from "../dom/dom-node";
-import { EditorSelection } from "../editor.selection";
 import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
 import { VDomNodeType } from "../vdom/vdom-node.enum";
@@ -91,7 +90,6 @@ export class Synchronizer {
         vdomNode.attach(subVdom, at);
         domNode.attach(subDom, at);
         position(
-            EditorSelection.getSelection(),
             subDom.getElement(),
             subDom.getNodeName() === "SPAN"
                 ? subDom.getText().length

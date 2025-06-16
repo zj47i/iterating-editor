@@ -1,30 +1,36 @@
 import { DomNode } from "../dom/dom-node.ts";
-import { EditorSelectionObject } from "../editor.selection.ts";
 import { TextFormat } from "../enum/text-format.ts";
 import { Synchronizer } from "../syncronizer/syncronizer.ts";
 import { VDomNode } from "../vdom/vdom-node.ts";
 import { VDomNodeType } from "../vdom/vdom-node.enum.ts";
 import { CommandBase } from "./command.base.ts";
 import { startEndTextNodes } from "./selection/startend.ts";
+import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
+import { range, rangeText } from "./selection/range.ts";
 
 export class ShortcutFormat extends CommandBase {
     private constructor(private sync: Synchronizer) {
         super(sync);
     }
 
-    public execute(textFormat: TextFormat, selection: EditorSelectionObject) {
+    public execute(
+        textFormat: TextFormat,
+        selectionStateMachine: SelectionStateMachine
+    ) {
         console.log("ShortcutFormat$");
-        const { endNode, endNodeOffset, startNode, startNodeOffset } =
-            startEndTextNodes(selection);
+        const { startContainer, startOffset, endContainer, endOffset } =
+            selectionStateMachine.getState();
 
-        if (startNode.parentElement === null) {
-            throw new Error("startNode.parentElement is null");
+        if (startContainer.parentElement === null) {
+            throw new Error("startContainer.parentElement is null");
         }
-        if (endNode.parentElement === null) {
-            throw new Error("endNode.parentElement is null");
+        if (endContainer.parentElement === null) {
+            throw new Error("endContainer.parentElement is null");
         }
-        const startSpan = DomNode.fromExistingElement(startNode.parentElement);
-        const endSpan = DomNode.fromExistingElement(endNode.parentElement);
+        const startSpan = DomNode.fromExistingElement(
+            startContainer.parentElement
+        );
+        const endSpan = DomNode.fromExistingElement(endContainer.parentElement);
         const startVSpan = this.sync.findVDomNodeFrom(startSpan);
         const endVSpan = this.sync.findVDomNodeFrom(endSpan);
 
@@ -33,9 +39,9 @@ export class ShortcutFormat extends CommandBase {
             if (!text) {
                 throw new Error("text is empty");
             }
-            const formerText = text.slice(0, startNodeOffset);
-            const selectedText = text.slice(startNodeOffset, endNodeOffset);
-            const latterText = text.slice(endNodeOffset);
+            const formerText = text.slice(0, startOffset);
+            const selectedText = text.slice(startOffset, endOffset);
+            const latterText = text.slice(endOffset);
 
             const formerSpanVDomNode = startVSpan;
 
@@ -52,10 +58,7 @@ export class ShortcutFormat extends CommandBase {
             requestAnimationFrame(() => {
                 const selectedSpan =
                     this.sync.findDomNodeFrom(selectedSpanVDomNode);
-                const range = document.createRange();
-                range.selectNode(selectedSpan.getElement());
-                selection.removeAllRanges();
-                selection.addRange(range);
+                range(selectedSpan);
             });
         } else {
             const vSpans = VDomNode.findVDomNodesBetween(
@@ -64,12 +67,12 @@ export class ShortcutFormat extends CommandBase {
             ).filter((vdomNode) => vdomNode.type === "span");
 
             // vSpans[0]
-            if (startNode.textContent === null) {
-                throw new Error("startNode.textContent is null");
+            if (startContainer.textContent === null) {
+                throw new Error("startContainer.textContent is null");
             }
-            const startText = startNode.textContent;
-            const startNonSelectedText = startText.slice(0, startNodeOffset);
-            const startSelectedText = startText.slice(startNodeOffset);
+            const startText = startContainer.textContent;
+            const startNonSelectedText = startText.slice(0, startOffset);
+            const startSelectedText = startText.slice(startOffset);
 
             const startSelectedVSpan = VDomNode.createVSpan(startSelectedText);
             this.sync.addNewNextSiblings(startVSpan, [startSelectedVSpan]);
@@ -82,12 +85,12 @@ export class ShortcutFormat extends CommandBase {
             }
 
             // vSpans[n-1]
-            if (endNode.textContent === null) {
-                throw new Error("endNode.textContent is null");
+            if (endContainer.textContent === null) {
+                throw new Error("endContainer.textContent is null");
             }
-            const endText = endNode.textContent;
-            const endSelectedText = endText.slice(0, endNodeOffset);
-            const endNonSelectedText = endText.slice(endNodeOffset);
+            const endText = endContainer.textContent;
+            const endSelectedText = endText.slice(0, endOffset);
+            const endNonSelectedText = endText.slice(endOffset);
 
             const endSelectedVSpan = endVSpan;
             const endNonSelectedVSpan =
@@ -104,7 +107,6 @@ export class ShortcutFormat extends CommandBase {
                 const endSelectedSpan =
                     this.sync.findDomNodeFrom(endSelectedVSpan);
 
-                const range = document.createRange();
                 const startSelectedTextnode =
                     startSelectedSpan.getElement().firstChild;
                 if (!(startSelectedTextnode instanceof Text)) {
@@ -115,10 +117,12 @@ export class ShortcutFormat extends CommandBase {
                     throw new Error("endSelectedText is not Text");
                 }
 
-                range.setStart(startSelectedTextnode, 0);
-                range.setEnd(endSelectedText, endSelectedText.length);
-                selection.removeAllRanges();
-                selection.addRange(range);
+                rangeText(
+                    startSelectedTextnode,
+                    0,
+                    endSelectedText,
+                    endSelectedText.length
+                );
             });
         }
     }
