@@ -19,7 +19,7 @@ export class EnterHandler {
         position(nextSiblingParagraph.getElement(), 0);
     }
 
-    handleTextNode(textNode: Text, cursorPosition: number) {
+    handleTextNodeLineUp(textNode: Text, cursorPosition: number) {
         console.info("EnterTextNode$");
         if (!(textNode.parentElement instanceof HTMLElement)) {
             throw new Error("parentElement is not HTMLElement");

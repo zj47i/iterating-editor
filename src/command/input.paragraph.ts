@@ -12,6 +12,6 @@ export class InputParagraph extends CommandBase {
         console.info("InputParagraph$");
         const newSpan = DomNode.createSpan(textNode);
         this.sync.appendNewDomNode(paragraph, newSpan);
-        position(textNode, 1);
+        position(textNode, textNode.length );
     }
 }

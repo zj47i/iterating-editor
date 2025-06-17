@@ -38,8 +38,8 @@ export class BackspaceHandler {
         }
     }
 
-    handleTextNode(textNode: Text, event: KeyboardEvent) {
-        // 텍스트 노드에서 백스페이스 처리
+    handleTextNodeLineUp(textNode: Text, event: KeyboardEvent) {
+        console.info("BackspaceTextNodeLineUp$");
         if (textNode.parentElement === null) {
             throw new Error("textNode.parentElement is null");
         }

@@ -65,7 +65,7 @@ export class Command {
             if (this.selectionStateMachine.isCursor()) {
                 const cursorState = this.selectionStateMachine.getState();
                 if (cursorState.startContainer instanceof Text) {
-                    this.enterHandler.handleTextNode(
+                    this.enterHandler.handleTextNodeLineUp(
                         cursorState.startContainer,
                         cursorState.startOffset
                     );
@@ -86,43 +86,49 @@ export class Command {
             }
         }
 
-        const selection = window.getSelection();
-        if (!selection) {
-            throw new Error("Selection is null");
-        }
-        if (!selection.anchorNode) {
-            throw new Error("Selection anchorNode is null");
-        }
+        const currentSelectionState = this.selectionStateMachine.getState();
+
         if (event.key === CommandKeyboardEvent.BACKSPACE) {
             console.info("Backspace key pressed");
             if (
-                selection.anchorNode.nodeType === Node.TEXT_NODE &&
-                selection.anchorOffset === 0
+                currentSelectionState.startContainer.nodeType ===
+                    Node.TEXT_NODE &&
+                currentSelectionState.startOffset === 0
             ) {
-                if (!(selection.anchorNode instanceof Text)) {
+                if (!(currentSelectionState.startContainer instanceof Text)) {
                     throw new Error("anchorNode is not Text");
                 }
-                this.backspaceHandler.handleTextNode(
-                    selection.anchorNode,
+                this.backspaceHandler.handleTextNodeLineUp(
+                    currentSelectionState.startContainer,
                     event
                 );
             }
             if (
-                selection.anchorNode.nodeType === Node.TEXT_NODE &&
-                selection.anchorOffset === 1
+                currentSelectionState.startContainer.nodeType ===
+                    Node.TEXT_NODE &&
+                currentSelectionState.startOffset === 1
             ) {
-                if (!(selection.anchorNode instanceof Text)) {
+                if (!(currentSelectionState.startContainer instanceof Text)) {
                     throw new Error("anchorNode is not Text");
                 }
                 event.preventDefault();
-                this.backspaceHandler.handleEmptyTextNode(selection.anchorNode);
+                this.backspaceHandler.handleEmptyTextNode(
+                    currentSelectionState.startContainer
+                );
             }
-            if (selection.anchorNode.nodeName === "P") {
-                if (!(selection.anchorNode instanceof HTMLElement)) {
+            if (currentSelectionState.startContainer.nodeName === "P") {
+                if (
+                    !(
+                        currentSelectionState.startContainer instanceof
+                        HTMLElement
+                    )
+                ) {
                     throw new Error("anchorNode is not HTMLElement");
                 }
                 this.backspaceHandler.handleParagraph(
-                    DomNode.fromExistingElement(selection.anchorNode),
+                    DomNode.fromExistingElement(
+                        currentSelectionState.startContainer
+                    ),
                     event
                 );
             }
@@ -152,14 +158,17 @@ export class Command {
     }
 
     input(event: CustomEvent<InputEvent> | InputEvent) {
-        const selection = window.getSelection();
-        if (!selection) {
-            throw new Error("Selection is null");
-        }
-        if (!selection.anchorNode) {
+        console.info("input$");
+        console.info(
+            event instanceof CustomEvent ? "CustomEvent" : "InputEvent"
+        );
+        const currentSelectionState = this.selectionStateMachine.getState();
+        if (!currentSelectionState.startContainer) {
             throw new Error("Selection anchorNode is null");
         }
-        const element = selection.anchorNode;
+        const element = currentSelectionState.startContainer;
+        console.log(currentSelectionState.startContainer);
+        console.log(currentSelectionState.startOffset);
         if (element.nodeType === Node.TEXT_NODE) {
             if (!(element instanceof Text)) {
                 throw new Error("element is not Text");
