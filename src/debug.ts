@@ -74,8 +74,9 @@ export class EditorDebugger {
             }
         });
         (editor as any).dom.getElement().addEventListener("click", (event) => {
+            console.log("debug click");
             document.addEventListener("selectionchange", () => {
-                const selection = document.getSelection() as any;
+                const selection = window.getSelection() as any;
                 const s = document.getElementById("@selection")!;
                 s.innerHTML = `anchorNode: ${selection.anchorNode.nodeName}<br>
                     anchorOffset: ${selection.anchorOffset}<br>

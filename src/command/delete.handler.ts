@@ -11,56 +11,55 @@ export class DeleteHandler extends CommandBase {
         super(sync);
     }
 
-    // 텍스트노드가 기준일때만 동작하는듯 한데, 다시한번 쭉 살펴보기
-
-    public static exec(
-        sync: Synchronizer,
-        selectionStateMachine: SelectionStateMachine
-    ) {
-        const handler = new DeleteHandler(sync);
-        handler.deleteRange(selectionStateMachine);
+    // exec를 execute로 변경하고, selectionStateMachine의 상태에 따라 분기
+    public execute(selectionStateMachine: SelectionStateMachine) {
+        if (selectionStateMachine.isRange()) {
+            this.deleteRange(selectionStateMachine);
+        } else if (selectionStateMachine.isCursor()) {
+            this.deleteCursor(selectionStateMachine);
+        } else {
+            throw new Error("DeleteHandler: 알 수 없는 selection 상태");
+        }
     }
 
     private deleteRange(selectionStateMachine: SelectionStateMachine) {
         console.info("DeleteRange$");
-        const endNode = selectionStateMachine.getState().endContainer;
-        const endNodeOffset = selectionStateMachine.getState().endOffset;
-        const startNode = selectionStateMachine.getState().startContainer;
-        const startNodeOffset = selectionStateMachine.getState().startOffset;
+        const { endContainer, endOffset, startContainer, startOffset } =
+            selectionStateMachine.getState();
 
-        if (startNode.parentElement === null) {
-            throw new Error("startNode.parentElement is null");
+        if (startContainer.parentElement === null) {
+            throw new Error("startContainer.parentElement is null");
         }
-        if (endNode.parentElement === null) {
-            throw new Error("endNode.parentElement is null");
+        if (endContainer.parentElement === null) {
+            throw new Error("endContainer.parentElement is null");
         }
         const startVNode = this.sync.findVDomNodeFrom(
-            DomNode.fromExistingElement(startNode.parentElement)
+            DomNode.fromExistingElement(startContainer.parentElement)
         );
         const endVNode = this.sync.findVDomNodeFrom(
-            DomNode.fromExistingElement(endNode.parentElement)
+            DomNode.fromExistingElement(endContainer.parentElement)
         );
 
-        if (startNode.textContent === null) {
-            throw new Error("startNode.textContent is null");
+        if (startContainer.textContent === null) {
+            throw new Error("startContainer.textContent is null");
         }
-        if (endNode.textContent === null) {
-            throw new Error("endNode.textContent is null");
+        if (endContainer.textContent === null) {
+            throw new Error("endContainer.textContent is null");
         }
         const leftText =
-            startNode.textContent.slice(0, startNodeOffset) +
-            endNode.textContent.slice(endNodeOffset);
+            startContainer.textContent.slice(0, startOffset) +
+            endContainer.textContent.slice(endOffset);
 
         if (startVNode === endVNode) {
             this.sync.setText(startVNode, leftText);
         } else {
             this.sync.setText(
                 startVNode,
-                startNode.textContent.slice(0, startNodeOffset)
+                startContainer.textContent.slice(0, startOffset)
             );
             this.sync.setText(
                 endVNode,
-                endNode.textContent.slice(endNodeOffset)
+                endContainer.textContent.slice(endOffset)
             );
 
             const all = VDomNode.findVDomNodesBetween(
@@ -80,6 +79,101 @@ export class DeleteHandler extends CommandBase {
         if (!firstChild) {
             throw new Error("firstChild is null");
         }
-        position(firstChild, startNodeOffset);
+        position(firstChild, startOffset);
+    }
+
+    // 커서 위치에서 다음 문자를 삭제하거나, 다음 줄을 병합하는 deleteCursor 메서드
+    private deleteCursor(selectionStateMachine: SelectionStateMachine) {
+        const state = selectionStateMachine.getState();
+        const node = state.startContainer;
+        const offset = state.startOffset;
+
+        // 텍스트노드에서 다음 문자 삭제
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (node.textContent === null) {
+                throw new Error("node.textContent is null");
+            }
+            if (offset < node.textContent.length) {
+                // 문자열 사이에서 다음 문자 삭제
+                const newText =
+                    node.textContent.slice(0, offset) +
+                    node.textContent.slice(offset + 1);
+                if (!(node.parentElement instanceof HTMLElement)) {
+                    throw new Error("parentElement is not HTMLElement");
+                }
+                const vNode = this.sync.findVDomNodeFrom(
+                    DomNode.fromExistingElement(node.parentElement)
+                );
+                this.sync.setText(vNode, newText);
+                position(node, offset);
+                return;
+            }
+        }
+        // 문자열 맨 뒤 또는 빈 줄에서 다음 줄 병합
+        // 다음 형제 노드가 있는지 확인
+        let currentDomNode: DomNode;
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (!(node.parentElement instanceof HTMLElement)) {
+                throw new Error("parentElement is not HTMLElement");
+            }
+            currentDomNode = DomNode.fromExistingElement(node.parentElement);
+        } else if (node instanceof HTMLElement) {
+            currentDomNode = DomNode.fromExistingElement(node);
+        } else {
+            throw new Error("deleteCursor: 지원하지 않는 노드 타입");
+        }
+        const nextDomNode = currentDomNode.getNextSibling();
+        if (nextDomNode) {
+            const currentVNode = this.sync.findVDomNodeFrom(currentDomNode);
+            const nextVNode = this.sync.findVDomNodeFrom(nextDomNode);
+            // 현재 줄이 비어있거나, 텍스트노드의 끝에 커서가 있을 때 다음 줄 병합
+            const currentText =
+                node.nodeType === Node.TEXT_NODE ? node.textContent ?? "" : "";
+            if (offset === currentText.length) {
+                // 다음 줄의 모든 자식 노드를 현재 줄의 마지막에 append
+                const currentElem = currentDomNode.getElement();
+                const nextElem = nextDomNode.getElement();
+                while (nextElem.firstChild) {
+                    currentElem.appendChild(nextElem.firstChild);
+                }
+                this.sync.remove(nextVNode);
+                // 커서를 병합된 첫 번째 노드(원래 커서 위치의 다음 노드)로 이동
+                let newCursorNode =
+                    currentElem.childNodes[offset] || currentElem.lastChild;
+                let newOffset = 0;
+                if (
+                    newCursorNode &&
+                    newCursorNode.nodeType === Node.TEXT_NODE
+                ) {
+                    newOffset = 0;
+                } else if (
+                    newCursorNode &&
+                    newCursorNode.firstChild &&
+                    newCursorNode.firstChild.nodeType === Node.TEXT_NODE
+                ) {
+                    newCursorNode = newCursorNode.firstChild;
+                    newOffset = 0;
+                } else {
+                    // fallback: 마지막 텍스트노드의 끝
+                    for (
+                        let i = currentElem.childNodes.length - 1;
+                        i >= 0;
+                        i--
+                    ) {
+                        const child = currentElem.childNodes[i];
+                        if (child.nodeType === Node.TEXT_NODE) {
+                            newCursorNode = child;
+                            newOffset = child.textContent?.length ?? 0;
+                            break;
+                        }
+                    }
+                }
+                if (newCursorNode) {
+                    position(newCursorNode, newOffset);
+                }
+                return;
+            }
+        }
+        // 마지막 줄이거나, 더 이상 삭제할 것이 없으면 아무 동작 없음
     }
 }

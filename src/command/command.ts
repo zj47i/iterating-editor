@@ -77,7 +77,10 @@ export class Command {
                     );
                 }
             } else if (this.selectionStateMachine.isRange()) {
-                DeleteHandler.exec(this.sync, this.selectionStateMachine);
+                const deleteHandler = DeleteHandler.getInstance<DeleteHandler>(
+                    this.sync
+                );
+                deleteHandler.execute(this.selectionStateMachine);
                 this.keydown(event); // 재귀 호출로 Enter 처리
             }
         }
@@ -148,7 +151,10 @@ export class Command {
 
         if (event.key === CommandKeyboardEvent.DELETE) {
             event.preventDefault();
-            DeleteHandler.exec(this.sync, this.selectionStateMachine);
+            const deleteHandler = DeleteHandler.getInstance<DeleteHandler>(
+                this.sync
+            );
+            deleteHandler.execute(this.selectionStateMachine);
         }
     }
 
