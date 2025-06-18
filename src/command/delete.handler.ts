@@ -6,14 +6,22 @@ import { CommandBase } from "./command.base.ts";
 import { position } from "./selection/position.ts";
 import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
 
-export class DeleteRange extends CommandBase {
+export class DeleteHandler extends CommandBase {
     private constructor(private sync: Synchronizer) {
         super(sync);
     }
 
     // 텍스트노드가 기준일때만 동작하는듯 한데, 다시한번 쭉 살펴보기
 
-    public execute(selectionStateMachine: SelectionStateMachine) {
+    public static exec(
+        sync: Synchronizer,
+        selectionStateMachine: SelectionStateMachine
+    ) {
+        const handler = new DeleteHandler(sync);
+        handler.deleteRange(selectionStateMachine);
+    }
+
+    private deleteRange(selectionStateMachine: SelectionStateMachine) {
         console.info("DeleteRange$");
         const endNode = selectionStateMachine.getState().endContainer;
         const endNodeOffset = selectionStateMachine.getState().endOffset;
