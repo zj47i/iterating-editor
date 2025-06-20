@@ -12,16 +12,14 @@ import { SelectionStateMachine } from "../state-machine/selection.state-machine.
 import { EnterHandler } from "./enter.handler.ts";
 
 export class Command {
-    private backspaceHandler: BackspaceHandler;
-    private enterHandler: EnterHandler;
     constructor(
         private sync: Synchronizer,
         private target: EventTarget,
         private compositionStateMachine: CompositionStateMachine,
-        private selectionStateMachine: SelectionStateMachine
+        private selectionStateMachine: SelectionStateMachine,
+        private backspaceHandler: BackspaceHandler,
+        private enterHandler: EnterHandler
     ) {
-        this.backspaceHandler = new BackspaceHandler(sync);
-        this.enterHandler = new EnterHandler(sync);
         this.target.addEventListener(
             "editorinput",
             (event: CustomEvent<InputEvent>) => {

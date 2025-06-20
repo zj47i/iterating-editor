@@ -1,12 +1,10 @@
-import { DomNode } from "../../dom/dom-node";
-
-export const range = (node: DomNode) => {
+export const range = (element: HTMLElement) => {
     const selection = window.getSelection();
     if (!selection) {
         throw new Error("No selection available");
     }
     const range = document.createRange();
-    range.selectNode(node.getElement());
+    range.selectNode(element);
     selection.removeAllRanges();
     selection.addRange(range);
 };

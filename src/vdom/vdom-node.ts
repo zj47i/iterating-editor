@@ -1,6 +1,6 @@
 import { EditorNode } from "../interface/editor-node.interface";
 import { TextFormat } from "../enum/text-format";
-import { Equatable } from "../interface/equatable.interface";
+import { Equatable } from "../syncronizer/algorithm/equatable.interface";
 import { UpdateHash } from "./decorator/update-hash";
 import { VDomNodeType } from "./vdom-node.enum";
 
