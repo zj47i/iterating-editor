@@ -6,11 +6,10 @@ import { VDomNodeType } from "../vdom/vdom-node.enum";
 import { editScript } from "./algorithm/edit-script";
 import { LCS } from "./algorithm/lcs";
 import { HookBefore } from "./decorator/hook-before";
-import { SelectionStateMachine } from "../state-machine/selection.state-machine";
+import { SelectionStateMachine, State } from "../state-machine/selection.state-machine";
 
 import _ from "lodash";
 import { UndoRedoManager } from "./undo-redo-manager";
-import { EditorState, CursorPosition } from "./editor-state";
 
 export class Synchronizer {
     private undoRedoManager = new UndoRedoManager();
@@ -22,21 +21,15 @@ export class Synchronizer {
         this.selectionStateMachine = selectionStateMachine;
     }
 
-    private getCurrentCursorPosition(): CursorPosition | null {
+    private getCurrentCursorPosition(): State | null {
         if (!this.selectionStateMachine) {
             return null;
         }
         
-        const state = this.selectionStateMachine.getState();
-        return {
-            startContainer: state.startContainer,
-            startOffset: state.startOffset,
-            endContainer: state.endContainer,
-            endOffset: state.endOffset
-        };
+        return this.selectionStateMachine.getState();
     }
 
-    private restoreCursorPosition(cursorPosition: CursorPosition | null): void {
+    private restoreCursorPosition(cursorPosition: State | null): void {
         if (!cursorPosition) {
             return;
         }
@@ -75,11 +68,7 @@ export class Synchronizer {
 
     private saveCurrentVdom() {
         const cursorPosition = this.getCurrentCursorPosition();
-        const editorState: EditorState = {
-            vdom: this.vdom.deepClone(),
-            cursorPosition: cursorPosition
-        };
-        this.undoRedoManager.push(editorState);
+        this.undoRedoManager.push(this.vdom.deepClone(), cursorPosition);
     }
 
     private setTextInternal(spanVDomNode: VDomNode, text: string) {
@@ -194,12 +183,8 @@ export class Synchronizer {
 
     public undo() {
         const currentCursorPosition = this.getCurrentCursorPosition();
-        const currentState: EditorState = {
-            vdom: this.vdom.deepClone(),
-            cursorPosition: currentCursorPosition
-        };
         
-        const prevState = this.undoRedoManager.undo(currentState);
+        const prevState = this.undoRedoManager.undo(this.vdom.deepClone(), currentCursorPosition);
         if (prevState) {
             this.replaceVdomDirectly(prevState.vdom);
             this.restoreCursorPosition(prevState.cursorPosition);
@@ -208,12 +193,8 @@ export class Synchronizer {
 
     public redo() {
         const currentCursorPosition = this.getCurrentCursorPosition();
-        const currentState: EditorState = {
-            vdom: this.vdom.deepClone(),
-            cursorPosition: currentCursorPosition
-        };
         
-        const nextState = this.undoRedoManager.redo(currentState);
+        const nextState = this.undoRedoManager.redo(this.vdom.deepClone(), currentCursorPosition);
         if (nextState) {
             this.replaceVdomDirectly(nextState.vdom);
             this.restoreCursorPosition(nextState.cursorPosition);
