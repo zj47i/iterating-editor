@@ -6,16 +6,17 @@ import { VDomNodeType } from "../vdom/vdom-node.enum";
 import { editScript } from "./algorithm/edit-script";
 import { LCS } from "./algorithm/lcs";
 import { HookBefore } from "./decorator/hook-before";
+
 import _ from "lodash";
+import { UndoRedoManager } from "./undo-redo-manager";
 
 export class Synchronizer {
-    private undoStack: VDomNode[] = [];
-    private redoStack: VDomNode[] = [];
+    private undoRedoManager = new UndoRedoManager<VDomNode>();
 
     constructor(private dom: DomNode, private vdom: VDomNode) {}
 
     private saveCurrentVdom() {
-        this.undoStack.push(this.vdom.deepClone());
+        this.undoRedoManager.push(this.vdom.deepClone());
     }
 
     private replaceVDom(currentVdom: VDomNode, newVdom: VDomNode) {
@@ -98,13 +99,14 @@ export class Synchronizer {
     }
 
     public undo() {
-        if (this.undoStack.length === 0) return;
-        const lastVdom = this.undoStack.pop()!;
-        this.redoStack.push(this.vdom.deepClone());
-        this.replaceVDom(this.vdom, lastVdom);
+        const prev = this.undoRedoManager.undo(this.vdom.deepClone());
+        if (prev) this.replaceVDom(this.vdom, prev);
     }
 
-    public redo() {}
+    public redo() {
+        const next = this.undoRedoManager.redo(this.vdom.deepClone());
+        if (next) this.replaceVDom(this.vdom, next);
+    }
 
     @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public setText(spanVDomNode: VDomNode, text: string) {
