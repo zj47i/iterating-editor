@@ -56,7 +56,7 @@ export class ShortcutFormat extends CommandBase {
             requestAnimationFrame(() => {
                 const selectedSpan =
                     this.sync.findDomNodeFrom(selectedSpanVDomNode);
-                range(selectedSpan);
+                range(selectedSpan.getElement());
             });
         } else {
             const vSpans = VDomNode.findVDomNodesBetween(

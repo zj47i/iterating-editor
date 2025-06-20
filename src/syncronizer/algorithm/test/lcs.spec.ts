@@ -1,4 +1,4 @@
-import { Equatable } from "../../../interface/equatable.interface";
+import { Equatable } from "../equatable.interface";
 import { LCS } from "../lcs";
 
 class Char implements Equatable<Char> {

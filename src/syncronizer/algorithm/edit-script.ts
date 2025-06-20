@@ -1,4 +1,4 @@
-import { Equatable } from "../../interface/equatable.interface";
+import { Equatable } from "./equatable.interface";
 
 export type EditOp<T> =
     | { edit: "delete" | "keep"; at: number }

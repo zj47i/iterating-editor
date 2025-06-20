@@ -1,4 +1,4 @@
-import { Equatable } from "../../interface/equatable.interface";
+import { Equatable } from "./equatable.interface";
 
 export const LCS = <T extends Equatable<T>>(a: T[], b: T[]): T[] => {
     const i = a.length;
