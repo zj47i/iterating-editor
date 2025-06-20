@@ -6,17 +6,89 @@ import { VDomNodeType } from "../vdom/vdom-node.enum";
 import { editScript } from "./algorithm/edit-script";
 import { LCS } from "./algorithm/lcs";
 import { HookBefore } from "./decorator/hook-before";
+import { SelectionStateMachine } from "../state-machine/selection.state-machine";
 
 import _ from "lodash";
 import { UndoRedoManager } from "./undo-redo-manager";
+import { EditorState, CursorPosition } from "./editor-state";
 
 export class Synchronizer {
-    private undoRedoManager = new UndoRedoManager<VDomNode>();
+    private undoRedoManager = new UndoRedoManager();
+    private selectionStateMachine: SelectionStateMachine | null = null;
 
     constructor(private dom: DomNode, private vdom: VDomNode) {}
 
+    public setSelectionStateMachine(selectionStateMachine: SelectionStateMachine) {
+        this.selectionStateMachine = selectionStateMachine;
+    }
+
+    private getCurrentCursorPosition(): CursorPosition | null {
+        if (!this.selectionStateMachine) {
+            return null;
+        }
+        
+        const state = this.selectionStateMachine.getState();
+        return {
+            startContainer: state.startContainer,
+            startOffset: state.startOffset,
+            endContainer: state.endContainer,
+            endOffset: state.endOffset
+        };
+    }
+
+    private restoreCursorPosition(cursorPosition: CursorPosition | null): void {
+        if (!cursorPosition) {
+            return;
+        }
+
+        try {
+            // Since we rebuild the DOM, the original nodes don't exist anymore
+            // We need to find the equivalent node in the new DOM structure
+            if (cursorPosition.startContainer.nodeType === Node.TEXT_NODE) {
+                // Find the equivalent text node in the rebuilt DOM
+                const firstParagraph = this.dom.getElement().querySelector('p');
+                if (firstParagraph) {
+                    const firstSpan = firstParagraph.querySelector('span');
+                    if (firstSpan && firstSpan.firstChild) {
+                        const textNode = firstSpan.firstChild;
+                        // Make sure the offset is valid for the text length
+                        const maxOffset = textNode.textContent?.length || 0;
+                        const safeOffset = Math.min(cursorPosition.startOffset, maxOffset);
+                        position(textNode, safeOffset);
+                        return;
+                    }
+                }
+            }
+            
+            // Fallback: try to use the original node if it still exists
+            if (this.isNodeInDOM(cursorPosition.startContainer)) {
+                position(cursorPosition.startContainer, cursorPosition.startOffset);
+            }
+        } catch (error) {
+            console.warn("Failed to restore cursor position:", error);
+        }
+    }
+
+    private isNodeInDOM(node: Node): boolean {
+        return document.contains(node);
+    }
+
     private saveCurrentVdom() {
-        this.undoRedoManager.push(this.vdom.deepClone());
+        const cursorPosition = this.getCurrentCursorPosition();
+        const editorState: EditorState = {
+            vdom: this.vdom.deepClone(),
+            cursorPosition: cursorPosition
+        };
+        this.undoRedoManager.push(editorState);
+    }
+
+    private setTextInternal(spanVDomNode: VDomNode, text: string) {
+        if (spanVDomNode.type !== "span") {
+            throw new Error("spanVDomNode is not span");
+        }
+        spanVDomNode.setText(text);
+        const span = this.findDomNodeFrom(spanVDomNode);
+        span.getElement().textContent = text;
     }
 
     private replaceVDom(currentVdom: VDomNode, newVdom: VDomNode) {
@@ -98,14 +170,54 @@ export class Synchronizer {
         );
     }
 
+    private replaceVdomDirectly(newVdom: VDomNode) {
+        // Clear current DOM content
+        const editorElement = this.dom.getElement();
+        editorElement.innerHTML = '';
+        
+        // Clear current vdom children
+        while (this.vdom.getChildren().length > 0) {
+            this.vdom.detach(this.vdom.getChildren()[0]);
+        }
+        
+        // Add new children to vdom
+        for (const child of newVdom.getChildren()) {
+            this.vdom.attachLast(child.deepClone());
+        }
+        
+        // Rebuild DOM from vdom
+        for (const child of this.vdom.getChildren()) {
+            const domChild = DomNode.fromVdom(child);
+            this.dom.attachLast(domChild);
+        }
+    }
+
     public undo() {
-        const prev = this.undoRedoManager.undo(this.vdom.deepClone());
-        if (prev) this.replaceVDom(this.vdom, prev);
+        const currentCursorPosition = this.getCurrentCursorPosition();
+        const currentState: EditorState = {
+            vdom: this.vdom.deepClone(),
+            cursorPosition: currentCursorPosition
+        };
+        
+        const prevState = this.undoRedoManager.undo(currentState);
+        if (prevState) {
+            this.replaceVdomDirectly(prevState.vdom);
+            this.restoreCursorPosition(prevState.cursorPosition);
+        }
     }
 
     public redo() {
-        const next = this.undoRedoManager.redo(this.vdom.deepClone());
-        if (next) this.replaceVDom(this.vdom, next);
+        const currentCursorPosition = this.getCurrentCursorPosition();
+        const currentState: EditorState = {
+            vdom: this.vdom.deepClone(),
+            cursorPosition: currentCursorPosition
+        };
+        
+        const nextState = this.undoRedoManager.redo(currentState);
+        if (nextState) {
+            this.replaceVdomDirectly(nextState.vdom);
+            this.restoreCursorPosition(nextState.cursorPosition);
+        }
     }
 
     @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)

@@ -1,19 +1,21 @@
-export class UndoRedoManager<T> {
-    private undoStack: T[] = [];
-    private redoStack: T[] = [];
+import { EditorState } from "./editor-state";
 
-    push(state: T) {
+export class UndoRedoManager {
+    private undoStack: EditorState[] = [];
+    private redoStack: EditorState[] = [];
+
+    push(state: EditorState) {
         this.undoStack.push(state);
         this.redoStack = [];
     }
 
-    undo(current: T): T | null {
+    undo(current: EditorState): EditorState | null {
         if (this.undoStack.length === 0) return null;
         this.redoStack.push(current);
         return this.undoStack.pop()!;
     }
 
-    redo(current: T): T | null {
+    redo(current: EditorState): EditorState | null {
         if (this.redoStack.length === 0) return null;
         this.undoStack.push(current);
         return this.redoStack.pop()!;
