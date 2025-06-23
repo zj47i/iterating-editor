@@ -1,4 +1,4 @@
-import { Equatable } from "../../../interface/equatable.interface";
+import { Equatable } from "../equatable.interface";
 import { editScript } from "../edit-script";
 import { LCS } from "../lcs";
 

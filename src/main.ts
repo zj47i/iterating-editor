@@ -8,6 +8,8 @@ import { Synchronizer } from "./syncronizer/syncronizer";
 import { CompositionStateMachine } from "./state-machine/composition.state-machine";
 import { SelectionStateMachine } from "./state-machine/selection.state-machine";
 import { Command } from "./command/command";
+import { BackspaceHandler } from "./command/backspace.handler";
+import { EnterHandler } from "./command/enter.handler";
 
 const editorDiv = document.getElementById("@editor");
 if (!(editorDiv instanceof HTMLDivElement)) {
@@ -23,6 +25,11 @@ const editor = new Editor(dom, vDom, sync);
 const compositionStateMachine = new CompositionStateMachine(editorDiv);
 const selectionStateMachine = new SelectionStateMachine();
 sync.setSelectionStateMachine(selectionStateMachine);
-const command = new Command(sync, editorDiv, compositionStateMachine, selectionStateMachine);
+
+// Create handlers for dependency injection
+const backspaceHandler = new BackspaceHandler(sync);
+const enterHandler = new EnterHandler(sync);
+
+const command = new Command(sync, editorDiv, compositionStateMachine, selectionStateMachine, backspaceHandler, enterHandler);
 
 new EditorDebugger(editor);
