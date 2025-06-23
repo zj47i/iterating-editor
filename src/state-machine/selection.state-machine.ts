@@ -1,4 +1,4 @@
-interface State {
+export interface State {
     startContainer: Node;
     startOffset: number;
     endContainer: Node;

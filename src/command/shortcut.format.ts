@@ -2,9 +2,7 @@ import { DomNode } from "../dom/dom-node.ts";
 import { TextFormat } from "../enum/text-format.ts";
 import { Synchronizer } from "../syncronizer/syncronizer.ts";
 import { VDomNode } from "../vdom/vdom-node.ts";
-import { VDomNodeType } from "../vdom/vdom-node.enum.ts";
 import { CommandBase } from "./command.base.ts";
-import { startEndTextNodes } from "./selection/startend.ts";
 import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
 import { range, rangeText } from "./selection/range.ts";
 

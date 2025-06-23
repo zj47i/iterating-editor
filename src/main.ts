@@ -22,6 +22,7 @@ const editor = new Editor(dom, vDom, sync);
 
 const compositionStateMachine = new CompositionStateMachine(editorDiv);
 const selectionStateMachine = new SelectionStateMachine();
+sync.setSelectionStateMachine(selectionStateMachine);
 const command = new Command(sync, editorDiv, compositionStateMachine, selectionStateMachine);
 
 new EditorDebugger(editor);
