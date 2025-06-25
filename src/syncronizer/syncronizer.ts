@@ -66,9 +66,23 @@ export class Synchronizer {
         return document.contains(node);
     }
 
-    private saveCurrentVdom() {
-        const cursorPosition = this.getCurrentCursorPosition();
-        this.undoRedoManager.push(this.vdom.deepClone(), cursorPosition);
+    private saveCurrentVdom(cursorPosition?: State | null) {
+        const actualCursorPosition = cursorPosition !== undefined ? cursorPosition : this.getCurrentCursorPosition();
+        
+        // Create a deep copy of the cursor position to avoid mutation issues
+        let cursorPositionCopy: State | null = null;
+        if (actualCursorPosition) {
+            cursorPositionCopy = {
+                startContainer: actualCursorPosition.startContainer,
+                startOffset: actualCursorPosition.startOffset,
+                endContainer: actualCursorPosition.endContainer,
+                endOffset: actualCursorPosition.endOffset,
+                onEvent: actualCursorPosition.onEvent.bind(actualCursorPosition),
+                getName: actualCursorPosition.getName.bind(actualCursorPosition)
+            };
+        }
+        
+        this.undoRedoManager.push(this.vdom.deepClone(), cursorPositionCopy);
     }
 
     private setTextInternal(spanVDomNode: VDomNode, text: string) {
