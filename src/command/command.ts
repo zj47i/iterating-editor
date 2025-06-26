@@ -113,6 +113,18 @@ export class Command {
                 this.backspaceHandler.handleEmptyTextNode(
                     currentSelectionState.startContainer
                 );
+            } else if (
+                currentSelectionState.startContainer.nodeType ===
+                    Node.TEXT_NODE &&
+                currentSelectionState.startOffset > 1
+            ) {
+                console.info("Handling normal character deletion");
+                // For normal character deletion, let browser handle it but ensure selection state updates
+                // We don't prevent default here, but we schedule a selection state update
+                setTimeout(() => {
+                    // Force selection state machine to update after browser processes backspace
+                    document.dispatchEvent(new Event('selectionchange'));
+                }, 0);
             } else if (currentSelectionState.startContainer.nodeName === "P") {
                 console.info("Handling backspace at paragraph");
                 if (
