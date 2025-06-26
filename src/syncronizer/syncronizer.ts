@@ -304,7 +304,10 @@ export class Synchronizer {
         const path: number[] = [];
         while (element.id !== "@editor") {
             if (!element.parentElement) {
-                throw new Error("element.parentElement is null");
+                // Handle case where element has been detached from DOM
+                // Return empty path to indicate element is no longer in DOM tree
+                console.warn("Element has been detached from DOM, returning empty path");
+                return [];
             }
             const index = Array.prototype.indexOf.call(
                 element.parentElement.children,
