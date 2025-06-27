@@ -113,6 +113,18 @@ export class Command {
                 this.backspaceHandler.handleEmptyTextNode(
                     currentSelectionState.startContainer
                 );
+            } else if (
+                currentSelectionState.startContainer.nodeType ===
+                    Node.TEXT_NODE &&
+                currentSelectionState.startOffset > 1
+            ) {
+                console.info("Handling normal character deletion");
+                // For normal character deletion, let browser handle it but ensure selection state updates
+                // We don't prevent default here, but we schedule a selection state update
+                setTimeout(() => {
+                    // Force selection state machine to update after browser processes backspace
+                    document.dispatchEvent(new Event('selectionchange'));
+                }, 0);
             } else if (currentSelectionState.startContainer.nodeName === "P") {
                 console.info("Handling backspace at paragraph");
                 if (
@@ -171,7 +183,10 @@ export class Command {
             }
             const textNode = element;
             if (textNode.parentElement === null) {
-                throw new Error("textNode parentElement is null");
+                // Text node has been detached from DOM (e.g., after backspace operation)
+                // Ignore this input event as the element is no longer in the DOM tree
+                console.warn("Ignoring input event on detached text node");
+                return;
             }
             const parent = DomNode.fromExistingElement(textNode.parentElement);
 
