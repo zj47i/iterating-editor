@@ -93,6 +93,7 @@ export class Command {
                 currentSelectionState.startOffset === 0
             ) {
                 console.info("Handling backspace at start of text node");
+                event.preventDefault();
                 if (!(currentSelectionState.startContainer instanceof Text)) {
                     throw new Error("anchorNode is not Text");
                 }
@@ -106,15 +107,16 @@ export class Command {
                 currentSelectionState.startOffset === 1
             ) {
                 console.info("Handling backspace at rear of first character");
+                event.preventDefault();
                 if (!(currentSelectionState.startContainer instanceof Text)) {
                     throw new Error("anchorNode is not Text");
                 }
-                event.preventDefault();
                 this.backspaceHandler.handleEmptyTextNode(
                     currentSelectionState.startContainer
                 );
             } else if (currentSelectionState.startContainer.nodeName === "P") {
                 console.info("Handling backspace at paragraph");
+                event.preventDefault();
                 if (
                     !(
                         currentSelectionState.startContainer instanceof
@@ -178,7 +180,7 @@ export class Command {
             const inputHandler = InputHandler.getInstance<InputHandler>(
                 this.sync
             );
-            inputHandler.execute(textNode, parent);
+            inputHandler.execute(textNode, parent, this.selectionStateMachine);
             return;
         }
     }
