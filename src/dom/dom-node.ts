@@ -242,4 +242,36 @@ export class DomNode implements EditorNode<DomNode> {
         }
         return this.element.innerHTML === "";
     }
+
+    /**
+     * Returns the path from this DomNode up to the root DomNode as an array of child indices.
+     * The path is ordered from this node up to the root (not reversed).
+     * Example: [2, 0, 1] means: this node is the 2nd child of its parent, that parent is the 0th child of its parent, etc.
+     */
+    public findPathToRoot(): number[] {
+        const path: number[] = [];
+        let node: DomNode = this;
+        while (node.getElement().id !== "@editor") {
+            const parent = node.getParent();
+            if (!parent) {
+                throw new Error("parent is null");
+            }
+            const index = parent.getChildren().indexOf(node);
+            path.push(index);
+            node = parent;
+        }
+        return path;
+    }
+
+    // TextNode 또는 HTMLElement에서 DomNode를 찾는 유틸리티
+    public static findFromElement(element: Node): DomNode | null {
+        if (element.nodeType === Node.ELEMENT_NODE) {
+            return DomNode.instances.get(element as HTMLElement) || null;
+        }
+        // 텍스트 노드의 경우 부모 span을 찾아야 함
+        if (element.nodeType === Node.TEXT_NODE && element.parentElement) {
+            return DomNode.instances.get(element.parentElement) || null;
+        }
+        return null;
+    }
 }

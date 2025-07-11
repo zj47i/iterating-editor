@@ -208,12 +208,20 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         return path;
     }
 
-    public findPathToRoot(): VDomNode[] {
-        const path: VDomNode[] = [];
-        let current: VDomNode | null = this;
-        while (current) {
-            path.push(current);
-            current = current.parent;
+    /**
+     * Returns the path from this node up to the VDOM root as an array of child indices.
+     * The path is ordered from this node up to the root (not reversed).
+     * Example: [2, 0, 1] means: this node is the 2nd child of its parent, that parent is the 0th child of its parent, etc.
+     */
+    public findPathToRoot(): number[] {
+        const path: number[] = [];
+        let node: VDomNode = this;
+        while (node.type !== "root") {
+            const parent = node.getParent();
+            if (!parent) return [];
+            const index = parent.getChildren().indexOf(node);
+            path.push(index);
+            node = parent;
         }
         return path;
     }
@@ -226,17 +234,21 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         node1: VDomNode,
         node2: VDomNode
     ): VDomNode {
-        const path1 = node1.findPathToRoot();
-        const path2 = node2.findPathToRoot();
-        const setPath2 = new Set(path2);
-        for (const node of path1) {
-            if (setPath2.has(node)) {
-                return node;
-            }
+        const path1 = node1.findPathToAncestorNode(VDomNode.getRoot(node1));
+        const path2 = node2.findPathToAncestorNode(VDomNode.getRoot(node2));
+        let lca: VDomNode | null = null;
+        let i = path1.length - 1;
+        let j = path2.length - 1;
+        while (i >= 0 && j >= 0 && path1[i] === path2[j]) {
+            lca = path1[i];
+            i--;
+            j--;
         }
-        throw new Error("no common ancestor");
+        if (!lca) throw new Error("no common ancestor");
+        return lca;
     }
 
+    // 올라가는 방향의 Path
     public static traversalAfterPath(path: VDomNode[]) {
         const result: VDomNode[] = [];
         if (path.length === 1) {
@@ -290,10 +302,11 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         throw new Error("unknown element");
     }
 
+    // 넘어오는 path는 root로 향하는 방향
     public static traversalBeforePath(p: VDomNode[]): VDomNode[] {
         const path = Array.from(p);
-        const states: VDomNode[] = [];
-        states.push(path.pop()!);
+        const vDomNodes: VDomNode[] = [];
+        vDomNodes.push(path.pop()!);
         while (path.length > 0) {
             const current = path.pop()!;
             const parent = current.getParent();
@@ -303,15 +316,15 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
             const index = parent.children.indexOf(current);
             if (index >= 1) {
                 for (let i = 0; i < index; i++) {
-                    states.push(
+                    vDomNodes.push(
                         ...VDomNode.preOrderTraversal(parent.children[i])
                     );
                 }
             }
-            states.push(current);
+            vDomNodes.push(current);
         }
 
-        return states;
+        return vDomNodes;
     }
 
     public static preOrderTraversal(from: VDomNode): VDomNode[] {
@@ -449,6 +462,17 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         parent.children.splice(parent.children.indexOf(this) + 1, 0, ...nodes);
 
         nodes.forEach((node) => (node.parent = this.parent));
+    }
+
+    /**
+     * Returns the root node of the given VDomNode by traversing up the parent chain.
+     */
+    public static getRoot(node: VDomNode): VDomNode {
+        let current: VDomNode = node;
+        while (current.getParent()) {
+            current = current.getParent()!;
+        }
+        return current;
     }
 
     public printTree({ depth = 0, prefix = "" }): void {

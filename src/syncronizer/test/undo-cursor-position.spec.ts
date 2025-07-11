@@ -16,9 +16,8 @@ describe("syncronizer undo cursor position", () => {
         selectionStateMachine: SelectionStateMachine;
 
     beforeEach(() => {
-        ({ sync, dom, vDom, vP1, p1, vSpan1, span1 } = mockSyncronizer());
-        selectionStateMachine = new SelectionStateMachine();
-        sync.setSelectionStateMachine(selectionStateMachine);
+        ({ sync, dom, vDom, vP1, p1, vSpan1, span1, selectionStateMachine } =
+            mockSyncronizer());
     });
 
     afterEach(() => {
@@ -29,16 +28,11 @@ describe("syncronizer undo cursor position", () => {
     test("undo restores text content", () => {
         // Initial text: "hello"
         expect(vSpan1.getText()).toBe("hello");
-        
         // Change text to "hello world"
         sync.setText(vSpan1, "hello world");
-        
-        // Verify the text changed
         expect(vSpan1.getText()).toBe("hello world");
-        
         // Perform undo
         sync.undo();
-        
         // Find the current span node (might be different after undo due to DOM rebuild)
         const currentSpan = vDom.getChildren()[0]?.getChildren()[0];
         expect(currentSpan).toBeDefined();
@@ -48,12 +42,10 @@ describe("syncronizer undo cursor position", () => {
     test("undo preserves cursor position", () => {
         // Initial text: "hello"
         expect(vSpan1.getText()).toBe("hello");
-        
         // Simulate cursor position at offset 2 (after "he")
         const textNode = span1.getElement().firstChild as Text;
         expect(textNode).toBeDefined();
         expect(textNode.nodeType).toBe(Node.TEXT_NODE);
-        
         // Set selection at position 2
         const selection = document.getSelection()!;
         const range = document.createRange();
@@ -61,24 +53,17 @@ describe("syncronizer undo cursor position", () => {
         range.setEnd(textNode, 2);
         selection.removeAllRanges();
         selection.addRange(range);
-        
         // Force selection state machine to update
         selectionStateMachine.transition(new Event("selectionchange"));
-        
         // Change text to "hello world" (simulating insertion at cursor position)
         sync.setText(vSpan1, "hello world");
-        
-        // Verify the text changed
         expect(vSpan1.getText()).toBe("hello world");
-        
         // Perform undo
         sync.undo();
-        
         // Find the current span node after undo
         const currentSpan = vDom.getChildren()[0]?.getChildren()[0];
         expect(currentSpan).toBeDefined();
         expect(currentSpan?.getText()).toBe("hello");
-        
         // Verify cursor position is preserved (should be at offset 2)
         const currentSelection = document.getSelection()!;
         expect(currentSelection.rangeCount).toBe(1);
@@ -88,12 +73,14 @@ describe("syncronizer undo cursor position", () => {
     });
 
     test("undo with null cursor position doesn't crash", () => {
-        // Don't set up selection state machine to simulate null cursor position
-        const syncWithoutSelection = new Synchronizer(dom, vDom);
-        
+        // selectionStateMachine 없이 동작하는 경우를 시뮬레이션
+        const syncWithoutSelection = new Synchronizer(
+            dom,
+            vDom,
+            undefined as any
+        );
         // Change text
         syncWithoutSelection.setText(vSpan1, "hello world");
-        
         // Perform undo - should not crash
         expect(() => {
             syncWithoutSelection.undo();

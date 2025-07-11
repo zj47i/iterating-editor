@@ -6,10 +6,12 @@ import { VDomNodeType } from "../vdom-node.enum";
 
 test("traversalAfterPath", () => {
     const vdomNode = mockVdom();
-    const path = vdomNode.span5.findPathToRoot();
+    // path는 findPathToAncestorNode(...).reverse()로 노드 배열을 만들어야 함
+    const path = vdomNode.span5.findPathToAncestorNode(vdomNode.root)
 
     const order = VDomNode.traversalAfterPath(path);
 
+    console.log(order);
     expect(order.length).toBe(21);
     expect(order[0]).toBe(vdomNode.span5);
     expect(order[1]).toBe(vdomNode.span6);
@@ -36,8 +38,9 @@ test("traversalAfterPath", () => {
 
 test("traversalAfterPath2", () => {
     const vdomNode = mockVdom2();
-
-    const path = vdomNode.span10Child2Nested2.findPathToRoot();
+    // path는 findPathToAncestorNode(...).reverse()로 노드 배열을 만들어야 함
+    const path = vdomNode.span10Child2Nested2
+        .findPathToAncestorNode(vdomNode.root)
 
     const order = VDomNode.traversalAfterPath(path);
 
@@ -68,17 +71,15 @@ test("findPathToRoot", () => {
     const vdomNode = mockVdom();
 
     const path1 = vdomNode.span2.findPathToRoot();
-    expect(path1.length).toBe(3);
-    expect(path1[2]).toBe(vdomNode.root);
-    expect(path1[1]).toBe(vdomNode.paragraph1);
-    expect(path1[0]).toBe(vdomNode.span2);
+    expect(path1.length).toBe(2);
+    expect(path1[1]).toBe(0); // paragraph1 is 0th child of root
+    expect(path1[0]).toBe(1); // span2 is 1st child of paragraph1
 
     const path2 = vdomNode.span18.findPathToRoot();
-    expect(path2.length).toBe(4);
-    expect(path2[3]).toBe(vdomNode.root);
-    expect(path2[2]).toBe(vdomNode.paragraph4);
-    expect(path2[1]).toBe(vdomNode.nestedParagraph3);
-    expect(path2[0]).toBe(vdomNode.span18);
+    expect(path2.length).toBe(3);
+    expect(path2[2]).toBe(3); // paragraph4 is 3rd child of root
+    expect(path2[1]).toBe(1); // nestedParagraph3 is 2nd child of paragraph4
+    expect(path2[0]).toBe(1); // span18 is 1st child of nestedParagraph3
 });
 
 test("findLowestCommonAncestor", () => {
@@ -140,27 +141,31 @@ test("findLowestCommonAncestor2", () => {
 test("traversalBeforePath", () => {
     const vdomNode = mockVdom();
 
-    const path = vdomNode.span10.findPathToRoot();
+    // findPathToAncestorNode로 실제 노드 경로를 만들어야 함
+    const pathNodes: VDomNode[] = vdomNode.span10.findPathToAncestorNode(
+        vdomNode.root
+    );
+    // .reverse(); // root부터 span10까지
 
-    const states = VDomNode.traversalBeforePath(path);
+    const vDomNodes = VDomNode.traversalBeforePath(pathNodes);
 
-    expect(states.length).toBe(16);
-    expect(states[0]).toBe(vdomNode.root);
-    expect(states[1]).toBe(vdomNode.paragraph1);
-    expect(states[2]).toBe(vdomNode.span1);
-    expect(states[3]).toBe(vdomNode.span2);
-    expect(states[4]).toBe(vdomNode.span3);
-    expect(states[5]).toBe(vdomNode.paragraph2);
-    expect(states[6]).toBe(vdomNode.span4);
-    expect(states[7]).toBe(vdomNode.nestedParagraph1);
-    expect(states[8]).toBe(vdomNode.span5);
-    expect(states[9]).toBe(vdomNode.span6);
-    expect(states[10]).toBe(vdomNode.nestedParagraph2);
-    expect(states[11]).toBe(vdomNode.span7);
-    expect(states[12]).toBe(vdomNode.paragraph3);
-    expect(states[13]).toBe(vdomNode.span8);
-    expect(states[14]).toBe(vdomNode.span9);
-    expect(states[15]).toBe(vdomNode.span10);
+    expect(vDomNodes.length).toBe(16);
+    expect(vDomNodes[0]).toBe(vdomNode.root);
+    expect(vDomNodes[1]).toBe(vdomNode.paragraph1);
+    expect(vDomNodes[2]).toBe(vdomNode.span1);
+    expect(vDomNodes[3]).toBe(vdomNode.span2);
+    expect(vDomNodes[4]).toBe(vdomNode.span3);
+    expect(vDomNodes[5]).toBe(vdomNode.paragraph2);
+    expect(vDomNodes[6]).toBe(vdomNode.span4);
+    expect(vDomNodes[7]).toBe(vdomNode.nestedParagraph1);
+    expect(vDomNodes[8]).toBe(vdomNode.span5);
+    expect(vDomNodes[9]).toBe(vdomNode.span6);
+    expect(vDomNodes[10]).toBe(vdomNode.nestedParagraph2);
+    expect(vDomNodes[11]).toBe(vdomNode.span7);
+    expect(vDomNodes[12]).toBe(vdomNode.paragraph3);
+    expect(vDomNodes[13]).toBe(vdomNode.span8);
+    expect(vDomNodes[14]).toBe(vdomNode.span9);
+    expect(vDomNodes[15]).toBe(vdomNode.span10);
 });
 
 test("findVDomNodesBetween", () => {

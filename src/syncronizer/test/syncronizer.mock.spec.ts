@@ -1,4 +1,5 @@
 import { DomNode } from "../../dom/dom-node";
+import { SelectionStateMachine } from "../../state-machine/selection.state-machine";
 import { VDomNode } from "../../vdom/vdom-node";
 import { VDomNodeType } from "../../vdom/vdom-node.enum";
 import { Synchronizer } from "../syncronizer";
@@ -23,7 +24,8 @@ export const mockSyncronizer = () => {
     const div = document.getElementById("@editor");
     const dom = new DomNode(div!);
     const vDom = VDomNode.createRootNode();
-    const sync = new Synchronizer(dom, vDom);
+    const selectionStateMachine = new SelectionStateMachine(div!);
+    const sync = new Synchronizer(dom, vDom, selectionStateMachine);
 
     const vP1 = new VDomNode(VDomNodeType.PARAGRAPH);
     sync.appendNewVDomNode(vDom, vP1);
@@ -53,5 +55,6 @@ export const mockSyncronizer = () => {
         p2,
         vSpan2,
         span2,
+        selectionStateMachine,
     };
 };

@@ -19,17 +19,23 @@ editorDiv.setAttribute("contenteditable", "true");
 
 const dom = new DomNode(editorDiv);
 const vDom = VDomNode.createRootNode();
-const sync = new Synchronizer(dom, vDom);
-const editor = new Editor(dom, vDom, sync);
 
-const compositionStateMachine = new CompositionStateMachine(editorDiv);
-const selectionStateMachine = new SelectionStateMachine();
-sync.setSelectionStateMachine(selectionStateMachine);
+const selectionStateMachine = new SelectionStateMachine(editorDiv);
+const sync = new Synchronizer(dom, vDom, selectionStateMachine);
+const editor = new Editor(dom, vDom, sync);
 
 // Create handlers for dependency injection
 const backspaceHandler = new BackspaceHandler(sync);
 const enterHandler = new EnterHandler(sync);
 
-const command = new Command(sync, editorDiv, compositionStateMachine, selectionStateMachine, backspaceHandler, enterHandler);
+const compositionStateMachine = new CompositionStateMachine(editorDiv);
+new Command(
+    sync,
+    editorDiv,
+    compositionStateMachine,
+    selectionStateMachine,
+    backspaceHandler,
+    enterHandler
+);
 
 new EditorDebugger(editor);

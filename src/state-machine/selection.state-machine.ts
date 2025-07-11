@@ -136,8 +136,26 @@ class RangeState implements State {
 
 export class SelectionStateMachine {
     private _currentState: State;
+    private _targetElement: HTMLElement;
+    private _listener: (event: Event) => void;
 
-    constructor() {
+    constructor(targetElement: HTMLElement) {
+        this._targetElement = targetElement;
+        this._currentState = null as any;
+        this._listener = (event: Event) => {
+            if (event.target === this._targetElement) {
+                this.transition(event);
+            }
+        };
+        this._targetElement.addEventListener("selectionchange", this._listener);
+    }
+
+    transition(event: Event): void {
+        const eventType = event.type;
+        if (eventType !== "selectionchange") {
+            throw new Error(`Unhandled event type: ${eventType}`);
+        }
+        // selectionchange가 발생한 시점에만 상태를 갱신
         const range = getCurrentRange();
         const selection = document.getSelection();
         if (selection && selection.isCollapsed) {
@@ -154,24 +172,8 @@ export class SelectionStateMachine {
                 getSelectionDirection(selection)
             );
         } else {
-            throw new Error(
-                "No selection found during SelectionStateMachine initialization."
-            );
+            this._currentState = null as any;
         }
-        document.addEventListener("selectionchange", (event) => {
-            this.transition(event);
-        });
-    }
-
-    transition(event: Event): void {
-        const eventType = event.type;
-
-        if (eventType !== "selectionchange") {
-            throw new Error(`Unhandled event type: ${eventType}`);
-        }
-
-        const nextState = this._currentState.onEvent(eventType);
-        this._currentState = nextState;
     }
 
     getState(): State {
