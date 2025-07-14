@@ -3,6 +3,7 @@ import { DomNode } from "../dom/dom-node";
 import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
 import { VDomNodeType } from "../vdom/vdom-node.enum";
+import { DomVDomConverter } from "../vdom/dom-vdom-converter";
 import { editScript } from "./algorithm/edit-script";
 import { LCS } from "./algorithm/lcs";
 import { HookBefore } from "./decorator/hook-before";
@@ -162,7 +163,7 @@ export class Synchronizer {
 
     attachSubVdom(vdomNode: VDomNode, at: number, subVdom: VDomNode) {
         const domNode = this.findDomNodeFrom(vdomNode);
-        const subDom = DomNode.fromVdom(subVdom);
+        const subDom = DomVDomConverter.buildDomTree(subVdom);
         vdomNode.attach(subVdom, at);
         domNode.attach(subDom, at);
         position(
@@ -190,7 +191,7 @@ export class Synchronizer {
         
         // Rebuild DOM from vdom
         for (const child of this.vdom.getChildren()) {
-            const domChild = DomNode.fromVdom(child);
+            const domChild = DomVDomConverter.buildDomTree(child);
             this.dom.attachLast(domChild);
         }
     }
@@ -254,7 +255,7 @@ export class Synchronizer {
 
     public appendNewVDomNodeWithoutHook(vParent: VDomNode, vChild: VDomNode) {
         const parent = this.findDomNodeFrom(vParent);
-        const child = DomNode.from(vChild);
+        const child = DomVDomConverter.fromVDomNode(vChild);
         vParent.attachLast(vChild);
         parent.attachLast(child);
     }
@@ -262,7 +263,7 @@ export class Synchronizer {
     @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewVDomNode(vParent: VDomNode, vChild: VDomNode) {
         const parent = this.findDomNodeFrom(vParent);
-        const child = DomNode.from(vChild);
+        const child = DomVDomConverter.fromVDomNode(vChild);
         vParent.attachLast(vChild);
         parent.attachLast(child);
     }
@@ -270,7 +271,7 @@ export class Synchronizer {
     @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewDomNode(parent: DomNode, child: DomNode) {
         const vParent = this.findVDomNodeFrom(parent);
-        const vChild = VDomNode.from(child.getElement());
+        const vChild = DomVDomConverter.fromHtmlElement(child.getElement());
         vParent.attachLast(vChild);
         parent.attachLast(child);
     }
@@ -295,7 +296,7 @@ export class Synchronizer {
         const domNode = this.findDomNodeFrom(vdomNode);
         vdomNode.addNextSiblings(siblings);
         const siblingDomNodes = siblings.map((sibling) =>
-            DomNode.from(sibling)
+            DomVDomConverter.fromVDomNode(sibling)
         );
         domNode.addNextSiblings(siblingDomNodes);
     }

@@ -1,10 +1,11 @@
 import { VDomNode } from "../vdom-node";
 import { mockVdom2 } from "./vdom.mock2.spec";
+import { VDomTraversal } from "../vdom-traversal";
 
 test("preOrderTraversal", () => {
     const vdomNode = mockVdom2();
 
-    const order = VDomNode.preOrderTraversal(vdomNode.root);
+    const order = VDomTraversal.preOrderTraversal(vdomNode.root);
     expect(order.length).toBe(41);
     expect(order[0]).toBe(vdomNode.root);
     expect(order[1]).toBe(vdomNode.paragraph1);

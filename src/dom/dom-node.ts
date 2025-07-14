@@ -1,7 +1,21 @@
 import { EditorNode } from "../interface/editor-node.interface";
 import { TextFormat } from "../enum/text-format";
-import { VDomNode } from "../vdom/vdom-node";
 
+/**
+ * DomNode class represents a wrapper around HTMLElement for DOM manipulation
+ * 
+ * This class is responsible for:
+ * - Managing HTMLElement instances with singleton pattern
+ * - Providing DOM manipulation methods (attach, detach, format, etc.)
+ * - Handling text content and formatting operations
+ * - Managing parent-child relationships in the DOM tree
+ * 
+ * Key features:
+ * - Singleton pattern: One DomNode instance per HTMLElement
+ * - Factory methods for creating common elements (paragraph, span)
+ * - Text formatting support (bold, italic, underline)
+ * - Tree traversal and manipulation methods
+ */
 export class DomNode implements EditorNode<DomNode> {
     private nodeName: string;
 
@@ -15,54 +29,25 @@ export class DomNode implements EditorNode<DomNode> {
         throw new Error("element is not DomNode");
     }
 
+    /**
+     * Creates a new paragraph DomNode
+     * @returns New paragraph DomNode
+     */
     public static createParagraph(): DomNode {
         return new DomNode(document.createElement("p"));
     }
 
+    /**
+     * Creates a new span DomNode
+     * @param textNode Optional text node to append
+     * @returns New span DomNode
+     */
     public static createSpan(textNode?: Text): DomNode {
         const span = new DomNode(document.createElement("span"));
         if (textNode) {
             span.appendTextNode(textNode);
         }
         return span;
-    }
-
-    public static from(vdomNode: VDomNode): DomNode {
-        if (vdomNode.type === "span") {
-            const text = vdomNode.getText();
-            if (text === null) {
-                return DomNode.createSpan();
-            } else {
-                return DomNode.createSpan(document.createTextNode(text));
-            }
-        } else if (vdomNode.type === "paragraph") {
-            const paragraph = DomNode.createParagraph();
-            paragraph.getElement().innerHTML = "<br>";
-            return paragraph;
-        }
-        throw new Error("unknown vdom node type");
-    }
-
-    public static fromVdom(vdomRoot: VDomNode): DomNode {
-        const domRoot = DomNode.from(vdomRoot);
-        const nodeMap = new Map<number, DomNode>();
-        nodeMap.set(vdomRoot.id, domRoot);
-
-        const stack: VDomNode[] = [vdomRoot];
-
-        while (stack.length > 0) {
-            const currentV = stack.pop()!;
-            const currentD = nodeMap.get(currentV.id)!;
-
-            for (const childV of currentV.getChildren()) {
-                const childD = DomNode.from(childV);
-                currentD.attachLast(childD);
-                nodeMap.set(childV.id, childD);
-                stack.push(childV);
-            }
-        }
-
-        return domRoot;
     }
 
     constructor(private element: HTMLElement) {

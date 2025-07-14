@@ -3,12 +3,13 @@ import { mockVdom } from "./vdom.mock.spec";
 import { mockVdom2 } from "./vdom.mock2.spec";
 import { VDomNode } from "../vdom-node";
 import { VDomNodeType } from "../vdom-node.enum";
+import { VDomTraversal } from "../vdom-traversal";
 
 test("traversalAfterPath", () => {
     const vdomNode = mockVdom();
     const path = vdomNode.span5.findPathToRoot();
 
-    const order = VDomNode.traversalAfterPath(path);
+    const order = VDomTraversal.traversalAfterPath(path);
 
     expect(order.length).toBe(21);
     expect(order[0]).toBe(vdomNode.span5);
@@ -39,7 +40,7 @@ test("traversalAfterPath2", () => {
 
     const path = vdomNode.span10Child2Nested2.findPathToRoot();
 
-    const order = VDomNode.traversalAfterPath(path);
+    const order = VDomTraversal.traversalAfterPath(path);
 
     expect(order.length).toBe(20);
     expect(order[0]).toBe(vdomNode.span10Child2Nested2);
@@ -84,25 +85,25 @@ test("findPathToRoot", () => {
 test("findLowestCommonAncestor", () => {
     const vdomNode = mockVdom();
 
-    const anscestor1 = VDomNode.findLowestCommonAncestor(
+    const anscestor1 = VDomTraversal.findLowestCommonAncestor(
         vdomNode.span16,
         vdomNode.span18
     );
     expect(anscestor1).toBe(vdomNode.paragraph4);
 
-    const anscestor2 = VDomNode.findLowestCommonAncestor(
+    const anscestor2 = VDomTraversal.findLowestCommonAncestor(
         vdomNode.span7,
         vdomNode.span20
     );
     expect(anscestor2).toBe(vdomNode.root);
 
-    const anscestor3 = VDomNode.findLowestCommonAncestor(
+    const anscestor3 = VDomTraversal.findLowestCommonAncestor(
         vdomNode.span14,
         vdomNode.span15
     );
     expect(anscestor3).toBe(vdomNode.paragraph3);
 
-    const anscestor4 = VDomNode.findLowestCommonAncestor(
+    const anscestor4 = VDomTraversal.findLowestCommonAncestor(
         vdomNode.span4,
         vdomNode.span7
     );
@@ -112,25 +113,25 @@ test("findLowestCommonAncestor", () => {
 test("findLowestCommonAncestor2", () => {
     const vdomNode = mockVdom();
 
-    const anscestor1 = VDomNode.findLowestCommonAncestor(
+    const anscestor1 = VDomTraversal.findLowestCommonAncestor(
         vdomNode.span16,
         vdomNode.span18
     );
     expect(anscestor1).toBe(vdomNode.paragraph4);
 
-    const anscestor2 = VDomNode.findLowestCommonAncestor(
+    const anscestor2 = VDomTraversal.findLowestCommonAncestor(
         vdomNode.span7,
         vdomNode.span20
     );
     expect(anscestor2).toBe(vdomNode.root);
 
-    const anscestor3 = VDomNode.findLowestCommonAncestor(
+    const anscestor3 = VDomTraversal.findLowestCommonAncestor(
         vdomNode.span14,
         vdomNode.span15
     );
     expect(anscestor3).toBe(vdomNode.paragraph3);
 
-    const anscestor4 = VDomNode.findLowestCommonAncestor(
+    const anscestor4 = VDomTraversal.findLowestCommonAncestor(
         vdomNode.span4,
         vdomNode.span7
     );
@@ -142,7 +143,7 @@ test("traversalBeforePath", () => {
 
     const path = vdomNode.span10.findPathToRoot();
 
-    const states = VDomNode.traversalBeforePath(path);
+    const states = VDomTraversal.traversalBeforePath(path);
 
     expect(states.length).toBe(16);
     expect(states[0]).toBe(vdomNode.root);
@@ -169,7 +170,7 @@ test("findVDomNodesBetween", () => {
     const node1 = vdomNode.span2;
     const node2 = vdomNode.span18;
 
-    const states = VDomNode.findVDomNodesBetween(node1, node2);
+    const states = VDomTraversal.findVDomNodesBetween(node1, node2);
     expect(states.length).toBe(23);
     expect(states[0]).toBe(vdomNode.span2);
     expect(states[1]).toBe(vdomNode.span3);

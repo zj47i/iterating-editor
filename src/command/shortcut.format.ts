@@ -5,6 +5,7 @@ import { VDomNode } from "../vdom/vdom-node.ts";
 import { CommandBase } from "./command.base.ts";
 import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
 import { range, rangeText } from "./selection/range.ts";
+import { VDomTraversal } from "../vdom/vdom-traversal.ts";
 
 export class ShortcutFormat extends CommandBase {
     private constructor(private sync: Synchronizer) {
@@ -59,7 +60,7 @@ export class ShortcutFormat extends CommandBase {
                 range(selectedSpan.getElement());
             });
         } else {
-            const vSpans = VDomNode.findVDomNodesBetween(
+            const vSpans = VDomTraversal.findVDomNodesBetween(
                 startVSpan,
                 endVSpan
             ).filter((vdomNode) => vdomNode.type === "span");

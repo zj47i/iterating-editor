@@ -1,11 +1,12 @@
 import { VDomNode } from "../vdom-node";
 import { mockVdom } from "./vdom.mock.spec";
 import { mockVdom2 } from "./vdom.mock2.spec";
+import { VDomTraversal } from "../vdom-traversal";
 
 test("determineLeftRight", () => {
     const vdomNode = mockVdom();
 
-    const [left1, right1] = VDomNode.determineLeftRight(
+    const [left1, right1] = VDomTraversal.determineLeftRight(
         vdomNode.span2,
         vdomNode.paragraph4
     );
@@ -13,7 +14,7 @@ test("determineLeftRight", () => {
     expect(left1).toBe(vdomNode.span2);
     expect(right1).toBe(vdomNode.paragraph4);
 
-    const [left2, right2] = VDomNode.determineLeftRight(
+    const [left2, right2] = VDomTraversal.determineLeftRight(
         vdomNode.span19,
         vdomNode.span18
     );
@@ -24,7 +25,7 @@ test("determineLeftRight", () => {
 test("determineLeftRight2", () => {
     const vdomNode = mockVdom2();
 
-    const [left1, right1] = VDomNode.determineLeftRight(
+    const [left1, right1] = VDomTraversal.determineLeftRight(
         vdomNode.span2,
         vdomNode.paragraph4
     );
@@ -32,7 +33,7 @@ test("determineLeftRight2", () => {
     expect(left1).toBe(vdomNode.span2);
     expect(right1).toBe(vdomNode.paragraph4);
 
-    const [left2, right2] = VDomNode.determineLeftRight(
+    const [left2, right2] = VDomTraversal.determineLeftRight(
         vdomNode.span19,
         vdomNode.span13
     );
@@ -43,7 +44,7 @@ test("determineLeftRight2", () => {
 test("determineLeftRight3", () => {
     const vdomNode = mockVdom2();
 
-    const [left1, right1] = VDomNode.determineLeftRight(
+    const [left1, right1] = VDomTraversal.determineLeftRight(
         vdomNode.paragraph3,
         vdomNode.span10Child2Nested1
     );
@@ -51,7 +52,7 @@ test("determineLeftRight3", () => {
     expect(left1).toBe(vdomNode.paragraph3);
     expect(right1).toBe(vdomNode.span10Child2Nested1);
 
-    const [left2, right2] = VDomNode.determineLeftRight(
+    const [left2, right2] = VDomTraversal.determineLeftRight(
         vdomNode.span10Child2Nested1,
         vdomNode.paragraph3
     );

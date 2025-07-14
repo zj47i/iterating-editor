@@ -4,6 +4,23 @@ import { Equatable } from "../syncronizer/algorithm/equatable.interface";
 import { UpdateHash } from "./decorator/update-hash";
 import { VDomNodeType } from "./vdom-node.enum";
 
+/**
+ * VDomNode class represents a virtual DOM node for efficient DOM manipulation
+ * 
+ * This class is responsible for:
+ * - Managing virtual DOM tree structure
+ * - Providing tree manipulation methods (attach, detach, absorb, etc.)
+ * - Handling text content and formatting for virtual nodes
+ * - Managing parent-child relationships in the virtual tree
+ * - Supporting hash-based equality checks for efficient comparison
+ * 
+ * Key features:
+ * - Virtual DOM representation independent of actual DOM
+ * - Hash-based equality for efficient tree comparison
+ * - Text formatting support for span nodes
+ * - Tree traversal support via path finding methods
+ * - Deep cloning support for state management
+ */
 export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     static HASH_LOCKED = false;
     static VDOM_ID_SEQ = 0;
@@ -222,113 +239,15 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         return new VDomNode(VDomNodeType.ROOT);
     }
 
-    public static findLowestCommonAncestor(
-        node1: VDomNode,
-        node2: VDomNode
-    ): VDomNode {
-        const path1 = node1.findPathToRoot();
-        const path2 = node2.findPathToRoot();
-        const setPath2 = new Set(path2);
-        for (const node of path1) {
-            if (setPath2.has(node)) {
-                return node;
-            }
-        }
-        throw new Error("no common ancestor");
-    }
 
-    public static traversalAfterPath(path: VDomNode[]) {
-        const result: VDomNode[] = [];
-        if (path.length === 1) {
-            result.push(path[0]);
-            return result;
-        }
 
-        const stack: VDomNode[] = [];
 
-        let i = path.length - 2;
-        while (i >= 0) {
-            const current = path[i];
-            const parent = current.parent;
-            if (parent) {
-                const index = parent.children.indexOf(current);
-                for (let j = parent.children.length - 1; j >= index; j--) {
-                    stack.push(parent.children[j]);
-                }
-            }
-            i--;
-        }
 
-        while (stack.length > 0) {
-            const current = stack.pop()!;
-            const index = path.indexOf(current);
-            if (index === -1) {
-                result.push(...VDomNode.preOrderTraversal(current));
-                continue;
-            }
-            if (index === 0) {
-                result.push(current);
-                continue;
-            }
-        }
 
-        return result;
-    }
 
-    static from(element: HTMLElement): VDomNode {
-        if (element.nodeName === "P") {
-            return new VDomNode(VDomNodeType.PARAGRAPH);
-        }
-        if (element.nodeName === "SPAN") {
-            if (!element.textContent) {
-                throw new Error("textContent is null");
-            }
-            const vSpan = VDomNode.createVSpan(element.textContent);
 
-            return vSpan;
-        }
-        throw new Error("unknown element");
-    }
 
-    public static traversalBeforePath(p: VDomNode[]): VDomNode[] {
-        const path = Array.from(p);
-        const states: VDomNode[] = [];
-        states.push(path.pop()!);
-        while (path.length > 0) {
-            const current = path.pop()!;
-            const parent = current.getParent();
-            if (!parent) {
-                throw new Error("no parent");
-            }
-            const index = parent.children.indexOf(current);
-            if (index >= 1) {
-                for (let i = 0; i < index; i++) {
-                    states.push(
-                        ...VDomNode.preOrderTraversal(parent.children[i])
-                    );
-                }
-            }
-            states.push(current);
-        }
 
-        return states;
-    }
-
-    public static preOrderTraversal(from: VDomNode): VDomNode[] {
-        const stack: VDomNode[] = [from];
-        const result: VDomNode[] = [];
-
-        while (stack.length > 0) {
-            const current = stack.pop()!;
-            result.push(current);
-
-            for (let i = current.children.length - 1; i >= 0; i--) {
-                stack.push(current.children[i]);
-            }
-        }
-
-        return result;
-    }
 
     public levelOrderTraversal(): VDomNode[] {
         const result: VDomNode[] = [this];
@@ -345,71 +264,9 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         return result;
     }
 
-    // ELEMENTS에 대한 순서를 알 수 있어서 이 함수가 필요없음.
-    // 이후를 위해 남겨두기
-    public static determineLeftRight(
-        node1: VDomNode,
-        node2: VDomNode
-    ): [VDomNode, VDomNode] {
-        const ancestor = VDomNode.findLowestCommonAncestor(node1, node2);
-        const path1 = node1.findPathToAncestorNode(ancestor);
-        const path2 = node2.findPathToAncestorNode(ancestor);
-        if (path1.length === 1) {
-            return [node1, node2];
-        }
-        if (path2.length === 1) {
-            return [node2, node1];
-        }
-        const index1 = path1[path1.length - 1].children.indexOf(
-            path1[path1.length - 2]
-        );
-        const index2 = path2[path2.length - 1].children.indexOf(
-            path2[path2.length - 2]
-        );
-        if (index1 < index2) {
-            return [node1, node2];
-        }
-        if (index1 > index2) {
-            return [node2, node1];
-        }
 
-        return [node1, node2];
-    }
 
-    public static findVDomNodesBetween(
-        left: VDomNode,
-        right: VDomNode
-    ): VDomNode[] {
-        const result: VDomNode[] = [];
 
-        const ancestor = VDomNode.findLowestCommonAncestor(left, right);
-        const path1 = left.findPathToAncestorNode(ancestor);
-        const path2 = right.findPathToAncestorNode(ancestor);
-
-        if (path1.length === 1) {
-            result.push(...VDomNode.traversalBeforePath(path2));
-            return result;
-        }
-        if (path2.length === 1) {
-            result.push(...VDomNode.traversalBeforePath(path1));
-            return result;
-        }
-
-        const index1 = ancestor.children.indexOf(path1[path1.length - 2]);
-        const index2 = ancestor.children.indexOf(path2[path2.length - 2]);
-
-        result.push(
-            ...VDomNode.traversalAfterPath(path1.slice(0, path1.length - 1))
-        );
-        for (let i = index1 + 1; i < index2; i++) {
-            result.push(...VDomNode.preOrderTraversal(ancestor.children[i]));
-        }
-        result.push(
-            ...VDomNode.traversalBeforePath(path2.slice(0, path2.length - 1))
-        );
-
-        return result;
-    }
 
     public getPreviousSibling() {
         if (!this.parent) {

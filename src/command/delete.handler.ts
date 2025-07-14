@@ -5,6 +5,7 @@ import { DomNode } from "../dom/dom-node.ts";
 import { CommandBase } from "./command.base.ts";
 import { position } from "./selection/position.ts";
 import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
+import { VDomTraversal } from "../vdom/vdom-traversal.ts";
 
 export class DeleteHandler extends CommandBase {
     private constructor(private sync: Synchronizer) {
@@ -62,7 +63,7 @@ export class DeleteHandler extends CommandBase {
                 endContainer.textContent.slice(endOffset)
             );
 
-            const all = VDomNode.findVDomNodesBetween(
+            const all = VDomTraversal.findVDomNodesBetween(
                 startVNode,
                 endVNode
             ).filter((v) => v.type === VDomNodeType.SPAN);
