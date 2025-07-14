@@ -37,7 +37,7 @@ export class InputHandler extends CommandBase {
             position(textNode, selectionStateMachine.getState().startOffset);
         } else {
             throw new Error(
-                `InputHandler: 지원하지 않는 부모 노드: ${parent.getNodeName()}`
+                `InputHandler: Unsupported parent node: ${parent.getNodeName()}`
             );
         }
     }

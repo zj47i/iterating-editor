@@ -143,11 +143,17 @@ export class SelectionStateMachine {
         this._targetElement = targetElement;
         this._currentState = null as any;
         this._listener = (event: Event) => {
-            if (event.target === this._targetElement) {
+            const selection = document.getSelection();
+            if (
+                selection &&
+                selection.anchorNode &&
+                this._targetElement.contains(selection.anchorNode)
+            ) {
+                console.log("SelectionStateMachine: Transitioning state");
                 this.transition(event);
             }
         };
-        this._targetElement.addEventListener("selectionchange", this._listener);
+        document.addEventListener("selectionchange", this._listener);
     }
 
     transition(event: Event): void {

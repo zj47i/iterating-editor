@@ -6,6 +6,7 @@ import { SelectionStateMachine } from "./state-machine/selection.state-machine";
 import { Command } from "./command/command";
 import { BackspaceHandler } from "./command/backspace.handler";
 import { EnterHandler } from "./command/enter.handler";
+import { VDomNodeType } from "./vdom/vdom-node.enum";
 
 export class Editor {
     public dom: DomNode;
@@ -33,6 +34,10 @@ export class Editor {
             this.vdom,
             this.selectionStateMachine
         );
+        this.sync.appendNewVDomNodeWithoutHook(
+            this.vdom,
+            new VDomNode(VDomNodeType.PARAGRAPH)
+        );
         this.backspaceHandler = new BackspaceHandler(this.sync);
         this.enterHandler = new EnterHandler(this.sync);
         this.command = new Command(
@@ -43,6 +48,5 @@ export class Editor {
             this.backspaceHandler,
             this.enterHandler
         );
-        // EditorDebugger는 포함하지 않음
     }
 }
