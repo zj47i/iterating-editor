@@ -10,6 +10,7 @@ import { BackspaceHandler } from "./backspace.handler.ts";
 import { CompositionStateMachine } from "../state-machine/composition.state-machine.ts";
 import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
 import { EnterHandler } from "./enter.handler.ts";
+import { position } from "./selection/position.ts";
 
 export class Command {
     constructor(
@@ -167,6 +168,9 @@ export class Command {
             throw new Error("Selection anchorNode is null");
         }
         const element = currentSelectionState.startContainer;
+        if (!(element instanceof HTMLElement)) {
+            throw new Error("element is not HTMLElement");
+        }
         if (element.nodeType === Node.TEXT_NODE) {
             if (!(element instanceof Text)) {
                 throw new Error("element is not Text");
@@ -181,6 +185,26 @@ export class Command {
                 this.sync
             );
             inputHandler.execute(textNode, parent, this.selectionStateMachine);
+            return;
+        }
+        if (
+            element.nodeType === Node.ELEMENT_NODE &&
+            element.nodeName === "P"
+        ) {
+            // Paragraph에 입력 시 새로운 span 생성 및 내용 삽입
+            const paragraphNode = DomNode.fromExistingElement(element);
+            while (element.firstChild) {
+                element.removeChild(element.firstChild);
+            }
+            const data =
+                event instanceof CustomEvent
+                    ? event.detail.data || ""
+                    : event.data || "";
+            const newSpan = DomNode.createSpan(document.createTextNode(data));
+
+            this.sync.appendNewDomNode(paragraphNode, newSpan);
+            // 커서를 새 span의 끝으로 이동
+            position(newSpan.getElement(), data.length);
             return;
         }
     }

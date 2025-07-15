@@ -254,6 +254,7 @@ export class DomNode implements EditorNode<DomNode> {
         while (node.getElement().id !== "@editor") {
             const parent = node.getParent();
             if (!parent) {
+                console.log(node);
                 throw new Error("parent is null");
             }
             const index = parent.getChildren().indexOf(node);
