@@ -33,7 +33,7 @@ export class DomVDomConverter {
     /**
      * Create a complete DOM tree from a VDOM tree
      */
-    static createDomTreeFromVDom(vdomRoot: VDomNode): DomNode {
+    static createDomTreeFromVDomTree(vdomRoot: VDomNode): DomNode {
         const domRoot = DomVDomConverter.createDomFromVDom(vdomRoot);
         const nodeMap = new Map<number, DomNode>();
         nodeMap.set(vdomRoot.id, domRoot);
@@ -76,17 +76,18 @@ export class DomVDomConverter {
      */
     static createVDomTreeFromElement(element: HTMLElement): VDomNode {
         const vdomRoot = DomVDomConverter.createVDomFromElement(element);
-        
+
         // Recursively convert children
         const childElements = Array.from(element.children)
-            .filter(child => child.nodeName !== "BR")
-            .filter(child => child instanceof HTMLElement) as HTMLElement[];
-        
+            .filter((child) => child.nodeName !== "BR")
+            .filter((child) => child instanceof HTMLElement) as HTMLElement[];
+
         for (const childElement of childElements) {
-            const childVDom = DomVDomConverter.createVDomTreeFromElement(childElement);
+            const childVDom =
+                DomVDomConverter.createVDomTreeFromElement(childElement);
             vdomRoot.attachLast(childVDom);
         }
-        
+
         return vdomRoot;
     }
 }

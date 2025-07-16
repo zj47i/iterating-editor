@@ -43,22 +43,6 @@ export class DomNode implements EditorNode<DomNode> {
     }
 
     /**
-     * Create a DomNode from a VDomNode (delegated to converter)
-     * @deprecated Use DomVDomConverter.createDomFromVDom instead
-     */
-    public static from(vdomNode: VDomNode): DomNode {
-        return DomVDomConverter.createDomFromVDom(vdomNode);
-    }
-
-    /**
-     * Create a complete DOM tree from a VDOM tree (delegated to converter)
-     * @deprecated Use DomVDomConverter.createDomTreeFromVDom instead
-     */
-    public static fromVdom(vdomRoot: VDomNode): DomNode {
-        return DomVDomConverter.createDomTreeFromVDom(vdomRoot);
-    }
-
-    /**
      * Constructor: Creates a DomNode wrapper around an HTML element
      * Uses WeakMap to ensure singleton pattern for each DOM element
      */
@@ -297,7 +281,7 @@ export class DomNode implements EditorNode<DomNode> {
     /**
      * Find path from this DomNode to the editor root
      * Returns array of child indices ordered from this node up to root
-     * Example: [2, 0, 1] means: this node is the 2nd child of its parent, 
+     * Example: [2, 0, 1] means: this node is the 2nd child of its parent,
      * that parent is the 0th child of its parent, etc.
      */
     public findPathToRoot(): number[] {

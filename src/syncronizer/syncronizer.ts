@@ -13,6 +13,7 @@ import {
 
 import _ from "lodash";
 import { UndoRedoManager } from "./undo-redo-manager";
+import { DomVDomConverter } from "../shared/dom-vdom-converter";
 
 export class Synchronizer {
     private undoRedoManager = new UndoRedoManager();
@@ -137,7 +138,7 @@ export class Synchronizer {
 
     attachSubVdom(vdomNode: VDomNode, at: number, subVdom: VDomNode) {
         const domNode = this.findDomNodeFrom(vdomNode);
-        const subDom = DomNode.fromVdom(subVdom);
+        const subDom = DomVDomConverter.createDomTreeFromVDomTree(subVdom);
         vdomNode.attach(subVdom, at);
         domNode.attach(subDom, at);
         position(
@@ -165,7 +166,7 @@ export class Synchronizer {
 
         // Rebuild DOM from vdom
         for (const child of this.vdom.getChildren()) {
-            const domChild = DomNode.fromVdom(child);
+            const domChild = DomVDomConverter.createDomTreeFromVDomTree(child);
             this.dom.attachLast(domChild);
         }
     }
@@ -322,7 +323,7 @@ export class Synchronizer {
 
     public appendNewVDomNodeWithoutHook(vParent: VDomNode, vChild: VDomNode) {
         const parent = this.findDomNodeFrom(vParent);
-        const child = DomNode.from(vChild);
+        const child = DomVDomConverter.createDomFromVDom(vChild);
         vParent.attachLast(vChild);
         parent.attachLast(child);
     }
@@ -330,7 +331,7 @@ export class Synchronizer {
     @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewVDomNode(vParent: VDomNode, vChild: VDomNode) {
         const parent = this.findDomNodeFrom(vParent);
-        const child = DomNode.from(vChild);
+        const child = DomVDomConverter.createDomFromVDom(vChild);
         vParent.attachLast(vChild);
         parent.attachLast(child);
     }
@@ -363,7 +364,7 @@ export class Synchronizer {
         const domNode = this.findDomNodeFrom(vdomNode);
         vdomNode.addNextSiblings(siblings);
         const siblingDomNodes = siblings.map((sibling) =>
-            DomNode.from(sibling)
+            DomVDomConverter.createDomFromVDom(sibling)
         );
         domNode.addNextSiblings(siblingDomNodes);
     }

@@ -3,7 +3,7 @@ import { TextFormat } from "../enum/text-format";
 import { Equatable } from "../syncronizer/algorithm/equatable.interface";
 import { UpdateHash } from "./decorator/update-hash";
 import { VDomNodeType } from "./vdom-node.enum";
-import { TreeUtils } from "../shared/tree-utils";
+import { TraversalNode } from "../shared/traversal-node.interface";
 
 /**
  * VDomNode: Manages virtual DOM structure and state
@@ -13,18 +13,23 @@ import { TreeUtils } from "../shared/tree-utils";
  * - Tree traversal algorithms
  * - State management and cloning
  */
-export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
+export class VDomNode
+    implements
+        EditorNode<VDomNode>,
+        Equatable<VDomNode>,
+        TraversalNode<VDomNode>
+{
     // Static properties for global state management
     static HASH_LOCKED = false;
     static VDOM_ID_SEQ = 0;
-    
+
     /**
      * Lock hash updates during batch operations
      */
     static lockHash(): void {
         this.HASH_LOCKED = true;
     }
-    
+
     /**
      * Unlock hash updates after batch operations
      */
@@ -38,7 +43,6 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
     private text: string | null;
     private format: TextFormat[];
     private hash: string;
-    private structHash: string;
 
     /**
      * Constructor: Creates a new VDomNode with specified type and optional ID
@@ -452,21 +456,21 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         const ancestor = VDomNode.findLowestCommonAncestor(node1, node2);
         const path1 = node1.findPathToAncestorNode(ancestor);
         const path2 = node2.findPathToAncestorNode(ancestor);
-        
+
         if (path1.length === 1) {
             return [node1, node2];
         }
         if (path2.length === 1) {
             return [node2, node1];
         }
-        
+
         const index1 = path1[path1.length - 1].children.indexOf(
             path1[path1.length - 2]
         );
         const index2 = path2[path2.length - 1].children.indexOf(
             path2[path2.length - 2]
         );
-        
+
         if (index1 < index2) {
             return [node1, node2];
         }
@@ -526,7 +530,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
 
         const stack: VDomNode[] = [];
         let i = path.length - 2;
-        
+
         while (i >= 0) {
             const current = path[i];
             const parent = current.parent;
@@ -562,7 +566,7 @@ export class VDomNode implements EditorNode<VDomNode>, Equatable<VDomNode> {
         const path = Array.from(p);
         const vDomNodes: VDomNode[] = [];
         vDomNodes.push(path.pop()!);
-        
+
         while (path.length > 0) {
             const current = path.pop()!;
             const parent = current.getParent();

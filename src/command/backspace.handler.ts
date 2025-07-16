@@ -1,6 +1,7 @@
 import { Synchronizer } from "../syncronizer/syncronizer.ts";
 import { DomNode } from "../dom/dom-node.ts";
 import { position } from "./selection/position.ts";
+import { DomVDomConverter } from "../shared/dom-vdom-converter.ts";
 
 export class BackspaceHandler {
     constructor(private sync: Synchronizer) {}
@@ -69,7 +70,9 @@ export class BackspaceHandler {
         if (previousVSpan) {
             this.sync.merge(previousVSpan, vSpan);
             position(
-                DomNode.fromVdom(previousVSpan).getElement(),
+                DomVDomConverter.createDomFromVDom(
+                    previousVSpan
+                ).getElement(),
                 previousVSpan.getText().length
             );
         } else {
@@ -81,7 +84,12 @@ export class BackspaceHandler {
             this.sync.remove(vSpan);
             // position 함수는 외부에서 import 필요
             if (nextVSpan) {
-                position(DomNode.fromVdom(nextVSpan).getElement(), 0);
+                position(
+                    DomVDomConverter.createDomFromVDom(
+                        nextVSpan
+                    ).getElement(),
+                    0
+                );
             } else {
                 position(parent.getElement(), 0);
             }
