@@ -7,7 +7,7 @@ export class ShortcutUndo extends CommandBase {
     }
 
     public execute() {
-        console.log("ShortcutUndo$");
+        console.info("ShortcutUndo$");
         this.sync.undo();
     }
 }

@@ -15,7 +15,7 @@ export class ShortcutFormat extends CommandBase {
         textFormat: TextFormat,
         selectionStateMachine: SelectionStateMachine
     ) {
-        console.log("ShortcutFormat$");
+        console.info("ShortcutFormat$");
         const { startContainer, startOffset, endContainer, endOffset } =
             selectionStateMachine.getState();
 

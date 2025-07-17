@@ -11,7 +11,6 @@ test("traversalAfterPath", () => {
 
     const order = VDomNode.traversalAfterPath(path);
 
-    console.log(order);
     expect(order.length).toBe(21);
     expect(order[0]).toBe(vdomNode.span5);
     expect(order[1]).toBe(vdomNode.span6);

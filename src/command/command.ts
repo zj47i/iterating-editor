@@ -25,7 +25,7 @@ export class Command {
             "editorinput",
             (event: CustomEvent<InputEvent>) => {
                 // CompositionInputStateMachine이 dispatch한 editorinput 이벤트 수신
-                console.log("editorinput event:", event);
+                console.info("editorinput event:", event);
                 if (!(event instanceof CustomEvent)) {
                     throw new Error("event is not InputEvent");
                 }
@@ -37,7 +37,7 @@ export class Command {
             if (!(event instanceof KeyboardEvent)) {
                 throw new Error("event is not KeyboardEvent");
             }
-            console.log("keydown event:", event);
+            console.info("keydown event:", event);
             this.keydown(event);
         });
 
@@ -168,9 +168,6 @@ export class Command {
             throw new Error("Selection anchorNode is null");
         }
         const element = currentSelectionState.startContainer;
-        if (!(element instanceof HTMLElement)) {
-            throw new Error("element is not HTMLElement");
-        }
         if (element.nodeType === Node.TEXT_NODE) {
             if (!(element instanceof Text)) {
                 throw new Error("element is not Text");
@@ -186,6 +183,9 @@ export class Command {
             );
             inputHandler.execute(textNode, parent, this.selectionStateMachine);
             return;
+        }
+        if (!(element instanceof HTMLElement)) {
+            throw new Error("element is not HTMLElement");
         }
         if (
             element.nodeType === Node.ELEMENT_NODE &&

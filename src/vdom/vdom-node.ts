@@ -616,7 +616,7 @@ export class VDomNode
             text = this.getText();
         }
         const formats = this.getFormats?.().join(", ") ?? "";
-        console.log(
+        console.debug(
             prefix,
             `${indent}${this.type}${text ? `: "${text}"` : ""}${
                 formats ? ` [${formats}]` : ""

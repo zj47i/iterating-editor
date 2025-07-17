@@ -74,10 +74,9 @@ export class EditorDebugger {
             }
         });
         (editor as any).dom.getElement().addEventListener("click", (event) => {
-            console.log("debug click");
+            console.debug("debug click");
             document.addEventListener("selectionchange", () => {
                 const selection = window.getSelection() as any;
-                console.log(selection);
                 const s = document.getElementById("@selection")!;
                 s.innerHTML = `anchorNode: ${selection.anchorNode.nodeName}<br>
                     anchorOffset: ${selection.anchorOffset}<br>
@@ -88,7 +87,7 @@ export class EditorDebugger {
     }
 
     printTree() {
-        console.log(
+        console.debug(
             "%cvdomRoot:==========================",
             "color: #cceeff; background-color: #222; padding: 2px 4px; border-radius: 3px; font-weight: bold;"
         );
@@ -97,7 +96,7 @@ export class EditorDebugger {
  
         const undoStack = this.getUndoStack() as [];
         undoStack.slice(-3).forEach((item: any) => {
-            console.log("undoStack: ++++++++++++++++++++++++++");
+            console.debug("undoStack: ++++++++++++++++++++++++++");
             item.printTree({ prefix: "   " });
         });
     }

@@ -149,8 +149,11 @@ export class SelectionStateMachine {
                 selection.anchorNode &&
                 this._targetElement.contains(selection.anchorNode)
             ) {
-                console.log("SelectionStateMachine: Transitioning state");
+                console.info("SelectionStateMachine: Transitioning state");
                 this.transition(event);
+            }
+            else {
+                console.warn("SelectionStateMachine: Event not in target element");
             }
         };
         document.addEventListener("selectionchange", this._listener);
