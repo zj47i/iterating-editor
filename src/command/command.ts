@@ -1,7 +1,7 @@
 import { Synchronizer } from "../syncronizer/syncronizer";
 import { CommandKeyboardEvent } from "./command.keyboard-event.enum";
 import { DomNode } from "../dom/dom-node";
-import { InputHandler } from "./input.handler.ts";
+import { InputHandler, InputPayload } from "./input.handler.ts";
 import { ShortcutFormat } from "./shortcut.format.ts";
 import { TextFormat } from "../enum/text-format";
 import { DeleteHandler } from "./delete.handler.ts";
@@ -10,7 +10,6 @@ import { BackspaceHandler } from "./backspace.handler.ts";
 import { CompositionStateMachine } from "../state-machine/composition.state-machine.ts";
 import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
 import { EnterHandler } from "./enter.handler.ts";
-import { position } from "./selection/position.ts";
 
 export class Command {
     constructor(
@@ -24,11 +23,10 @@ export class Command {
         this.target.addEventListener(
             "editorinput",
             (event: CustomEvent<InputEvent>) => {
-                // CompositionInputStateMachine이 dispatch한 editorinput 이벤트 수신
-                console.info("editorinput event:", event);
                 if (!(event instanceof CustomEvent)) {
                     throw new Error("event is not InputEvent");
                 }
+                console.info("editorinput event:", event);
                 this.input(event);
             }
         );
@@ -42,16 +40,17 @@ export class Command {
         });
 
         this.target.addEventListener("input", (event) => {
+            if (!(event instanceof InputEvent)) {
+                throw new Error("event is not InputEvent");
+            }
+
             if (
                 this.compositionStateMachine.getState().getName() !==
                 "IdleState"
             ) {
                 return;
             }
-
-            if (!(event instanceof InputEvent)) {
-                throw new Error("event is not InputEvent");
-            }
+            console.info("input event:", event);
             this.input(event);
         });
     }
@@ -161,51 +160,15 @@ export class Command {
         }
     }
 
-    input(event: CustomEvent<InputEvent> | InputEvent) {
-        console.info("input$");
-        const currentSelectionState = this.selectionStateMachine.getState();
-        if (!currentSelectionState.startContainer) {
-            throw new Error("Selection anchorNode is null");
+    input(event: InputEvent | CustomEvent<InputEvent>) {
+        let data = "";
+        if (event instanceof CustomEvent) {
+            data = event.detail.data || "";
+        } else if (event instanceof InputEvent) {
+            data = event.data || "";
         }
-        const element = currentSelectionState.startContainer;
-        if (element.nodeType === Node.TEXT_NODE) {
-            if (!(element instanceof Text)) {
-                throw new Error("element is not Text");
-            }
-            const textNode = element;
-            if (textNode.parentElement === null) {
-                throw new Error("textNode parentElement is null");
-            }
-            const parent = DomNode.fromExistingElement(textNode.parentElement);
-
-            const inputHandler = InputHandler.getInstance<InputHandler>(
-                this.sync
-            );
-            inputHandler.execute(textNode, parent, this.selectionStateMachine);
-            return;
-        }
-        if (!(element instanceof HTMLElement)) {
-            throw new Error("element is not HTMLElement");
-        }
-        if (
-            element.nodeType === Node.ELEMENT_NODE &&
-            element.nodeName === "P"
-        ) {
-            // Paragraph에 입력 시 새로운 span 생성 및 내용 삽입
-            const paragraphNode = DomNode.fromExistingElement(element);
-            while (element.firstChild) {
-                element.removeChild(element.firstChild);
-            }
-            const data =
-                event instanceof CustomEvent
-                    ? event.detail.data || ""
-                    : event.data || "";
-            const newSpan = DomNode.createSpan(document.createTextNode(data));
-
-            this.sync.appendNewDomNode(paragraphNode, newSpan);
-            // 커서를 새 span의 끝으로 이동
-            position(newSpan.getElement(), data.length);
-            return;
-        }
+        const payload: InputPayload = { data };
+        const inputHandler = InputHandler.getInstance<InputHandler>(this.sync);
+        inputHandler.execute(this.selectionStateMachine, payload);
     }
 }

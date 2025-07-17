@@ -143,6 +143,7 @@ export class SelectionStateMachine {
         this._targetElement = targetElement;
         this._currentState = null as any;
         this._listener = (event: Event) => {
+            console.info("selectionchange: ", event);
             const selection = document.getSelection();
             if (
                 selection &&
