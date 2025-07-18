@@ -16,10 +16,7 @@ export class InputHandler extends CommandBase {
     /**
      * 텍스트 노드 입력 처리 함수 (execute 내부 분리)
      */
-    private handleTextNodeInput(
-        textNode: Text,
-        selectionStateMachine: SelectionStateMachine
-    ) {
+    private handleTextNodeInput(textNode: Text) {
         if (!textNode.parentElement) {
             throw new Error("textNode parentElement is null");
         }
@@ -38,7 +35,7 @@ export class InputHandler extends CommandBase {
                 textNode.parentElement as HTMLElement
             );
             this.sync.setTextFromDom(span, textNode.textContent);
-            position(textNode, selectionStateMachine.getState().startOffset);
+            position(textNode, textNode.length);
         } else {
             throw new Error(
                 `InputHandler: Unsupported parent node: ${parent.getNodeName()}`
@@ -62,7 +59,7 @@ export class InputHandler extends CommandBase {
             if (!(element instanceof Text)) {
                 throw new Error("textNode is not Text");
             }
-            this.handleTextNodeInput(element, selectionStateMachine);
+            this.handleTextNodeInput(element);
             return;
         }
         if (!(element instanceof HTMLElement)) {
