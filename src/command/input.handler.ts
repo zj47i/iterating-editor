@@ -53,6 +53,9 @@ export class InputHandler extends CommandBase {
         selectionStateMachine: SelectionStateMachine,
         payload: InputPayload
     ) {
+        // Force update selection state to get real-time selection before processing input
+        selectionStateMachine.forceUpdate();
+        
         const currentSelectionState = selectionStateMachine.getState();
         if (!currentSelectionState.startContainer) {
             throw new Error("Selection startContainer is null");

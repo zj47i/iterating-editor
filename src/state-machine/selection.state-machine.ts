@@ -190,6 +190,42 @@ export class SelectionStateMachine {
         return this._currentState;
     }
 
+    /**
+     * Forces an immediate update of the selection state by reading from the current DOM selection.
+     * This is useful when we need up-to-date selection information before selectionchange events fire.
+     */
+    forceUpdate(): void {
+        try {
+            const range = getCurrentRange();
+            const selection = document.getSelection();
+            
+            // Only update if the selection is within our target element
+            if (
+                selection &&
+                selection.anchorNode &&
+                this._targetElement.contains(selection.anchorNode)
+            ) {
+                if (selection.isCollapsed) {
+                    this._currentState = new CursorState(
+                        range.startContainer,
+                        range.startOffset
+                    );
+                } else {
+                    this._currentState = new RangeState(
+                        range.startContainer,
+                        range.startOffset,
+                        range.endContainer,
+                        range.endOffset,
+                        getSelectionDirection(selection)
+                    );
+                }
+            }
+        } catch (error) {
+            // If there's no valid selection, keep the current state
+            console.warn("SelectionStateMachine.forceUpdate(): No valid selection found", error);
+        }
+    }
+
     isCursor(): boolean {
         return this._currentState instanceof CursorState;
     }
