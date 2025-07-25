@@ -283,6 +283,7 @@ export class DomNode implements EditorNode<DomNode> {
      * Returns array of child indices ordered from this node up to root
      * Example: [2, 0, 1] means: this node is the 2nd child of its parent,
      * that parent is the 0th child of its parent, etc.
+     * Returns empty array if node is not attached to the DOM tree yet.
      */
     public findPathToRoot(): number[] {
         const path: number[] = [];
@@ -290,7 +291,8 @@ export class DomNode implements EditorNode<DomNode> {
         while (node.getElement().id !== "@editor") {
             const parent = node.getParent();
             if (!parent) {
-                throw new Error("parent is null");
+                // Node is not attached to the DOM tree yet, return empty path
+                return [];
             }
             const index = parent.getChildren().indexOf(node);
             path.push(index);
