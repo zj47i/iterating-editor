@@ -73,7 +73,7 @@ export class EditorDebugger {
                 this.printTree();
             }
         });
-        (editor as any).dom.getElement().addEventListener("click", (event) => {
+        editor.domRoot.getElement().addEventListener("click", (event) => {
             console.debug("debug click");
             document.addEventListener("selectionchange", () => {
                 const selection = window.getSelection() as any;

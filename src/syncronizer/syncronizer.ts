@@ -28,37 +28,34 @@ export class Synchronizer {
         if (!this.selectionStateMachine) {
             return null;
         }
-        return this.selectionStateMachine.getState();
+        return this.selectionStateMachine.getState();5
     }
 
     private saveCurrentVdom(cursorPosition?: State | null) {
-        const actualCursorPosition =
-            cursorPosition !== undefined
-                ? cursorPosition
-                : this.getCurrentCursorPosition();
-        // 커서 위치를 VDOM 경로+offset으로 변환하여 저장
-        let logicalCursor: { vdomPath: number[]; offset: number } | null = null;
-        if (actualCursorPosition) {
-            let vdomNode: VDomNode | null = null;
-            let offset = actualCursorPosition.startOffset;
-            if (actualCursorPosition.startContainer instanceof VDomNode) {
-                vdomNode = actualCursorPosition.startContainer;
-            } else if (actualCursorPosition.startContainer instanceof Node) {
-                const domNode = DomNode.findFromElement(
-                    actualCursorPosition.startContainer
-                );
-                if (domNode) {
-                    vdomNode = this.findVDomNodeFrom(domNode);
-                }
-            }
-            if (vdomNode) {
-                logicalCursor = {
-                    vdomPath: vdomNode.findPathToRoot(),
-                    offset,
-                };
+        const actualCursorPosition = cursorPosition ?? this.getCurrentCursorPosition();
+        const logicalCursor = actualCursorPosition
+            ? this.convertCursorToLogical(actualCursorPosition)
+            : null;
+        this.undoRedoManager.push(this.vdom.deepClone(), logicalCursor);
+    }
+
+    // 커서 위치를 VDOM 경로와 offset으로 변환하는 헬퍼 함수
+    private convertCursorToLogical(cursor: State): { vdomPath: number[]; offset: number } | null {
+        let vdomNode: VDomNode | null = null;
+        const offset = cursor.startOffset;
+
+        if (cursor.startContainer instanceof VDomNode) {
+            vdomNode = cursor.startContainer;
+        } else if (cursor.startContainer instanceof Node) {
+            const domNode = DomNode.findFromElement(cursor.startContainer);
+            if (domNode) {
+                vdomNode = this.findVDomNodeFrom(domNode);
             }
         }
-        this.undoRedoManager.push(this.vdom.deepClone(), logicalCursor);
+
+        return vdomNode
+            ? { vdomPath: vdomNode.findPathToRoot(), offset }
+            : null;
     }
 
     private setTextInternal(spanVDomNode: VDomNode, text: string) {
@@ -336,10 +333,13 @@ export class Synchronizer {
         parent.attachLast(child);
     }
 
-    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
+    // dom의 변형에 의해서 생성되는 것을 처리하려다 보니 없는 vdom을 찾는 과정에서 에러가 발생해 주석처리
+    // @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewDomNode(parent: DomNode, child: DomNode) {
         const vParent = this.findVDomNodeFrom(parent);
-        const vChild = VDomNode.from(child.getElement());
+        const vChild = DomVDomConverter.createVDomFromElement(
+            child.getElement()
+        );
         vParent.attachLast(vChild);
         parent.attachLast(child);
     }

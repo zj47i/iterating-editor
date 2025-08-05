@@ -9,8 +9,8 @@ import { EnterHandler } from "./command/enter.handler";
 import { VDomNodeType } from "./vdom/vdom-node.enum";
 
 export class Editor {
-    public dom: DomNode;
-    public vdom: VDomNode;
+    public domRoot: DomNode;
+    public vdomRoot: VDomNode;
     public sync: Synchronizer;
     public selectionStateMachine: SelectionStateMachine;
     public compositionStateMachine: CompositionStateMachine;
@@ -25,17 +25,17 @@ export class Editor {
         }
         editorDiv.setAttribute("contenteditable", "true");
 
-        this.dom = new DomNode(editorDiv);
-        this.vdom = VDomNode.createRootNode();
+        this.domRoot = new DomNode(editorDiv);
+        this.vdomRoot = VDomNode.createRootNode();
         this.selectionStateMachine = new SelectionStateMachine(editorDiv);
         this.compositionStateMachine = new CompositionStateMachine(editorDiv);
         this.sync = new Synchronizer(
-            this.dom,
-            this.vdom,
+            this.domRoot,
+            this.vdomRoot,
             this.selectionStateMachine
         );
         this.sync.appendNewVDomNodeWithoutHook(
-            this.vdom,
+            this.vdomRoot,
             new VDomNode(VDomNodeType.PARAGRAPH)
         );
         this.backspaceHandler = new BackspaceHandler(this.sync);
