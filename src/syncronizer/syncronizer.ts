@@ -28,69 +28,34 @@ export class Synchronizer {
         if (!this.selectionStateMachine) {
             return null;
         }
-        return this.selectionStateMachine.getState();
+        return this.selectionStateMachine.getState();5
     }
 
-    private convertCursorToLogicalPosition(cursorPosition: State | null): { vdomPath: number[]; offset: number } | null {
-        if (!cursorPosition) {
-            return null;
-        }
+    private saveCurrentVdom(cursorPosition?: State | null) {
+        const actualCursorPosition = cursorPosition ?? this.getCurrentCursorPosition();
+        const logicalCursor = actualCursorPosition
+            ? this.convertCursorToLogical(actualCursorPosition)
+            : null;
+        this.undoRedoManager.push(this.vdom.deepClone(), logicalCursor);
+    }
 
+    // 커서 위치를 VDOM 경로와 offset으로 변환하는 헬퍼 함수
+    private convertCursorToLogical(cursor: State): { vdomPath: number[]; offset: number } | null {
         let vdomNode: VDomNode | null = null;
-        let offset = cursorPosition.startOffset;
+        const offset = cursor.startOffset;
 
-        if (cursorPosition.startContainer instanceof VDomNode) {
-            vdomNode = cursorPosition.startContainer;
-        } else if (cursorPosition.startContainer instanceof Node) {
-            const domNode = DomNode.findFromElement(cursorPosition.startContainer);
+        if (cursor.startContainer instanceof VDomNode) {
+            vdomNode = cursor.startContainer;
+        } else if (cursor.startContainer instanceof Node) {
+            const domNode = DomNode.findFromElement(cursor.startContainer);
             if (domNode) {
                 vdomNode = this.findVDomNodeFrom(domNode);
             }
         }
 
-        if (!vdomNode) {
-            return null;
-        }
-
-        return {
-            vdomPath: vdomNode.findPathToRoot(),
-            offset,
-        };
-    }
-
-    private restoreCursorFromLogicalPosition(logicalCursor: { vdomPath: number[]; offset: number } | null) {
-        if (!logicalCursor || !logicalCursor.vdomPath) {
-            return;
-        }
-
-        let vNode = this.vdom;
-        for (let i = logicalCursor.vdomPath.length - 1; i >= 0; i--) {
-            vNode = vNode.getChildren()[logicalCursor.vdomPath[i]];
-        }
-        
-        const domNode = this.findDomNodeFrom(vNode);
-        const el = domNode.getElement();
-        
-        if (el.firstChild && el.firstChild.nodeType === Node.TEXT_NODE) {
-            const selection = document.getSelection();
-            if (selection) {
-                const range = document.createRange();
-                range.setStart(el.firstChild, logicalCursor.offset);
-                range.setEnd(el.firstChild, logicalCursor.offset);
-                selection.removeAllRanges();
-                selection.addRange(range);
-            }
-        }
-    }
-
-    private createUndoSnapshot(cursorPosition?: State | null) {
-        const actualCursorPosition =
-            cursorPosition !== undefined
-                ? cursorPosition
-                : this.getCurrentCursorPosition();
-        
-        const logicalCursor = this.convertCursorToLogicalPosition(actualCursorPosition);
-        this.undoRedoManager.push(this.vdom.deepClone(), logicalCursor);
+        return vdomNode
+            ? { vdomPath: vdomNode.findPathToRoot(), offset }
+            : null;
     }
 
     private setTextInternal(spanVDomNode: VDomNode, text: string) {
@@ -205,33 +170,118 @@ export class Synchronizer {
 
     public undo() {
         const currentCursorPosition = this.getCurrentCursorPosition();
-        const logicalCurrent = this.convertCursorToLogicalPosition(currentCursorPosition);
-        
+        // 현재 커서 위치도 VDOM 경로+offset으로 변환
+        let logicalCurrent: { vdomPath: number[]; offset: number } | null =
+            null;
+        if (currentCursorPosition) {
+            let vdomNode: VDomNode | null = null;
+            let offset = currentCursorPosition.startOffset;
+            if (currentCursorPosition.startContainer instanceof VDomNode) {
+                vdomNode = currentCursorPosition.startContainer;
+            } else if (currentCursorPosition.startContainer instanceof Node) {
+                const domNode = DomNode.findFromElement(
+                    currentCursorPosition.startContainer
+                );
+                if (domNode) {
+                    vdomNode = this.findVDomNodeFrom(domNode);
+                }
+            }
+            if (vdomNode) {
+                logicalCurrent = {
+                    vdomPath: vdomNode.findPathToRoot(),
+                    offset,
+                };
+            }
+        }
         const prevState = this.undoRedoManager.undo(
             this.vdom.deepClone(),
             logicalCurrent
         );
         if (prevState) {
             this.replaceVdomDirectly(prevState.vdom);
-            this.restoreCursorFromLogicalPosition(prevState.cursorPosition);
+            // 커서 복원: VDOM 경로+offset 기반
+            const logicalCursor = prevState.cursorPosition;
+            if (logicalCursor && logicalCursor.vdomPath) {
+                let vNode = this.vdom;
+                for (let i = logicalCursor.vdomPath.length - 1; i >= 0; i--) {
+                    vNode = vNode.getChildren()[logicalCursor.vdomPath[i]];
+                }
+                const domNode = this.findDomNodeFrom(vNode);
+                const el = domNode.getElement();
+                if (
+                    el.firstChild &&
+                    el.firstChild.nodeType === Node.TEXT_NODE
+                ) {
+                    const selection = document.getSelection();
+                    if (selection) {
+                        const range = document.createRange();
+                        range.setStart(el.firstChild, logicalCursor.offset);
+                        range.setEnd(el.firstChild, logicalCursor.offset);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                }
+            }
         }
     }
 
     public redo() {
         const currentCursorPosition = this.getCurrentCursorPosition();
-        const logicalCurrent = this.convertCursorToLogicalPosition(currentCursorPosition);
-        
+        let logicalCurrent: { vdomPath: number[]; offset: number } | null =
+            null;
+        if (currentCursorPosition) {
+            let vdomNode: VDomNode | null = null;
+            let offset = currentCursorPosition.startOffset;
+            if (currentCursorPosition.startContainer instanceof VDomNode) {
+                vdomNode = currentCursorPosition.startContainer;
+            } else if (currentCursorPosition.startContainer instanceof Node) {
+                const domNode = DomNode.findFromElement(
+                    currentCursorPosition.startContainer
+                );
+                if (domNode) {
+                    vdomNode = this.findVDomNodeFrom(domNode);
+                }
+            }
+            if (vdomNode) {
+                logicalCurrent = {
+                    vdomPath: vdomNode.findPathToRoot(),
+                    offset,
+                };
+            }
+        }
         const nextState = this.undoRedoManager.redo(
             this.vdom.deepClone(),
             logicalCurrent
         );
         if (nextState) {
             this.replaceVdomDirectly(nextState.vdom);
-            this.restoreCursorFromLogicalPosition(nextState.cursorPosition);
+            // 커서 복원: VDOM 경로+offset 기반
+            const logicalCursor = nextState.cursorPosition;
+            if (logicalCursor && logicalCursor.vdomPath) {
+                let vNode = this.vdom;
+                for (let i = logicalCursor.vdomPath.length - 1; i >= 0; i--) {
+                    vNode = vNode.getChildren()[logicalCursor.vdomPath[i]];
+                }
+                const domNode = this.findDomNodeFrom(vNode);
+                const el = domNode.getElement();
+                if (
+                    el.firstChild &&
+                    el.firstChild.nodeType === Node.TEXT_NODE
+                ) {
+                    const selection = document.getSelection();
+                    if (selection) {
+                        const range = document.createRange();
+                        range.setStart(el.firstChild, logicalCursor.offset);
+                        range.setEnd(el.firstChild, logicalCursor.offset);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                }
+            }
         }
     }
 
-    @HookBefore<Synchronizer>(Synchronizer.prototype.createUndoSnapshot)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public setText(spanVDomNode: VDomNode, text: string) {
         if (spanVDomNode.type !== "span") {
             throw new Error("spanVDomNode is not span");
@@ -241,20 +291,20 @@ export class Synchronizer {
         span.getElement().textContent = text;
     }
 
-    @HookBefore<Synchronizer>(Synchronizer.prototype.createUndoSnapshot)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public setTextFromDom(spanDomNode: DomNode, text: string) {
         const vSpan = this.findVDomNodeFrom(spanDomNode);
         vSpan.setText(text);
     }
 
-    @HookBefore<Synchronizer>(Synchronizer.prototype.createUndoSnapshot)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public format(vSpan: VDomNode, textFormat: TextFormat) {
         const span = this.findDomNodeFrom(vSpan);
         vSpan.setFormat(textFormat);
         span.setFormat(textFormat);
     }
 
-    @HookBefore<Synchronizer>(Synchronizer.prototype.createUndoSnapshot)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public merge(vParagraph1: VDomNode, vParagraph2: VDomNode) {
         const paragraph1 = this.findDomNodeFrom(vParagraph1);
         const paragraph2 = this.findDomNodeFrom(vParagraph2);
@@ -275,7 +325,7 @@ export class Synchronizer {
         parent.attachLast(child);
     }
 
-    @HookBefore<Synchronizer>(Synchronizer.prototype.createUndoSnapshot)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewVDomNode(vParent: VDomNode, vChild: VDomNode) {
         const parent = this.findDomNodeFrom(vParent);
         const child = DomVDomConverter.createDomFromVDom(vChild);
@@ -283,15 +333,18 @@ export class Synchronizer {
         parent.attachLast(child);
     }
 
-    @HookBefore<Synchronizer>(Synchronizer.prototype.createUndoSnapshot)
+    // dom의 변형에 의해서 생성되는 것을 처리하려다 보니 없는 vdom을 찾는 과정에서 에러가 발생해 주석처리
+    // @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public appendNewDomNode(parent: DomNode, child: DomNode) {
         const vParent = this.findVDomNodeFrom(parent);
-        const vChild = VDomNode.from(child.getElement());
+        const vChild = DomVDomConverter.createVDomFromElement(
+            child.getElement()
+        );
         vParent.attachLast(vChild);
         parent.attachLast(child);
     }
 
-    @HookBefore<Synchronizer>(Synchronizer.prototype.createUndoSnapshot)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public remove(vdomNode: VDomNode) {
         const domNode = this.findDomNodeFrom(vdomNode);
         const parent = domNode.getParent();
@@ -306,7 +359,7 @@ export class Synchronizer {
         }
     }
 
-    @HookBefore<Synchronizer>(Synchronizer.prototype.createUndoSnapshot)
+    @HookBefore<Synchronizer>(Synchronizer.prototype.saveCurrentVdom)
     public addNewNextSiblings(vdomNode: VDomNode, siblings: VDomNode[]) {
         const domNode = this.findDomNodeFrom(vdomNode);
         vdomNode.addNextSiblings(siblings);
