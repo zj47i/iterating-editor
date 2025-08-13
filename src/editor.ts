@@ -9,35 +9,29 @@ import { EnterHandler } from "./command/enter.handler";
 import { VDomNodeType } from "./vdom/vdom-node.enum";
 
 export class Editor {
-    public dom: DomNode;
-    public vdom: VDomNode;
-    public sync: Synchronizer;
-    public selectionStateMachine: SelectionStateMachine;
-    public compositionStateMachine: CompositionStateMachine;
-    public backspaceHandler: BackspaceHandler;
-    public enterHandler: EnterHandler;
-    public command: Command;
+    public readonly domRoot: DomNode;
+    public readonly vdomRoot: VDomNode;
+    public readonly sync: Synchronizer;
+    public readonly selectionStateMachine: SelectionStateMachine;
+    public readonly compositionStateMachine: CompositionStateMachine;
+    public readonly backspaceHandler: BackspaceHandler;
+    public readonly enterHandler: EnterHandler;
+    public readonly command: Command;
 
     constructor(editorId: string) {
-        const editorDiv = document.getElementById(editorId);
-        if (!(editorDiv instanceof HTMLDivElement)) {
-            throw new Error("editor element not found");
-        }
-        editorDiv.setAttribute("contenteditable", "true");
+        const editorDiv = this.getEditorDiv(editorId);
+        this.enableContentEditable(editorDiv);
 
-        this.dom = new DomNode(editorDiv);
-        this.vdom = VDomNode.createRootNode();
+        this.domRoot = new DomNode(editorDiv);
+        this.vdomRoot = VDomNode.createRootNode();
         this.selectionStateMachine = new SelectionStateMachine(editorDiv);
         this.compositionStateMachine = new CompositionStateMachine(editorDiv);
         this.sync = new Synchronizer(
-            this.dom,
-            this.vdom,
+            this.domRoot,
+            this.vdomRoot,
             this.selectionStateMachine
         );
-        this.sync.appendNewVDomNodeWithoutHook(
-            this.vdom,
-            new VDomNode(VDomNodeType.PARAGRAPH)
-        );
+        this.appendInitialParagraph();
         this.backspaceHandler = new BackspaceHandler(this.sync);
         this.enterHandler = new EnterHandler(this.sync);
         this.command = new Command(
@@ -47,6 +41,30 @@ export class Editor {
             this.selectionStateMachine,
             this.backspaceHandler,
             this.enterHandler
+        );
+    }
+
+    // Resolve and validate editor root element
+    private getEditorDiv(editorId: string): HTMLDivElement {
+        const editorDiv = document.getElementById(editorId);
+        if (!(editorDiv instanceof HTMLDivElement)) {
+            throw new Error(
+                `Editor element with id '${editorId}' not found or is not a div element`
+            );
+        }
+        return editorDiv;
+    }
+
+    // Enable editing on the root element
+    private enableContentEditable(editorDiv: HTMLDivElement): void {
+        editorDiv.setAttribute("contenteditable", "true");
+    }
+
+    // Create initial paragraph in the VDOM/DOM
+    private appendInitialParagraph(): void {
+        this.sync.appendNewVDomNodeWithoutHook(
+            this.vdomRoot,
+            new VDomNode(VDomNodeType.PARAGRAPH)
         );
     }
 }

@@ -28,7 +28,7 @@ export class Synchronizer {
         if (!this.selectionStateMachine) {
             return null;
         }
-        return this.selectionStateMachine.getState();
+        return this.selectionStateMachine.getState();5
     }
 
     private createUndoSnapshot(cursorPosition?: State | null) {
