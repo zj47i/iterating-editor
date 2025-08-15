@@ -44,28 +44,16 @@ function getSelectionDirection(
     return "none";
 }
 
-class CursorState implements State {
-    startContainer: Node;
-    startOffset: number;
-    /**
-     * 커서 상태에서는 endContainer, endOffset이 항상 start와 동일함
-     */
-    endContainer: Node;
-    endOffset: number;
-
-    constructor(container: Node, offset: number) {
-        this.startContainer = container;
-        this.startOffset = offset;
-        this.endContainer = container;
-        this.endOffset = offset;
-    }
-
-    onEvent(input: string): State {
-        if (input === "selectionchange") {
+/**
+ * Factory class for creating State objects from selection data
+ */
+class StateFactory {
+    static createFromSelection(): State | null {
+        try {
             const range = getCurrentRange();
             const selection = document.getSelection();
+            
             if (selection && selection.isCollapsed) {
-                // 불변성: 항상 새 객체 반환
                 return new CursorState(range.startContainer, range.startOffset);
             } else if (selection) {
                 return new RangeState(
@@ -76,8 +64,49 @@ class CursorState implements State {
                     getSelectionDirection(selection)
                 );
             }
+        } catch (error) {
+            // Return null if no valid selection is found
+            return null;
+        }
+        return null;
+    }
+}
+
+/**
+ * Base state class with common onEvent implementation
+ */
+abstract class BaseState implements State {
+    abstract startContainer: Node;
+    abstract startOffset: number;
+    abstract endContainer: Node;
+    abstract endOffset: number;
+
+    onEvent(input: string): State {
+        if (input === "selectionchange") {
+            const newState = StateFactory.createFromSelection();
+            return newState || this;
         }
         return this;
+    }
+
+    abstract getName(): string;
+}
+
+class CursorState extends BaseState {
+    startContainer: Node;
+    startOffset: number;
+    /**
+     * 커서 상태에서는 endContainer, endOffset이 항상 start와 동일함
+     */
+    endContainer: Node;
+    endOffset: number;
+
+    constructor(container: Node, offset: number) {
+        super();
+        this.startContainer = container;
+        this.startOffset = offset;
+        this.endContainer = container;
+        this.endOffset = offset;
     }
 
     getName(): string {
@@ -85,7 +114,7 @@ class CursorState implements State {
     }
 }
 
-class RangeState implements State {
+class RangeState extends BaseState {
     startContainer: Node;
     startOffset: number;
     endContainer: Node;
@@ -102,31 +131,12 @@ class RangeState implements State {
         endOffset: number,
         direction: SelectionDirection
     ) {
+        super();
         this.startContainer = startContainer;
         this.startOffset = startOffset;
         this.endContainer = endContainer;
         this.endOffset = endOffset;
         this.direction = direction;
-    }
-
-    onEvent(input: string): State {
-        if (input === "selectionchange") {
-            const range = getCurrentRange();
-            const selection = document.getSelection();
-            if (selection && selection.isCollapsed) {
-                return new CursorState(range.startContainer, range.startOffset);
-            } else if (selection) {
-                // 불변성: 항상 새 객체 반환
-                return new RangeState(
-                    range.startContainer,
-                    range.startOffset,
-                    range.endContainer,
-                    range.endOffset,
-                    getSelectionDirection(selection)
-                );
-            }
-        }
-        return this;
     }
 
     getName(): string {
@@ -160,30 +170,32 @@ export class SelectionStateMachine {
         document.addEventListener("selectionchange", this._listener);
     }
 
+    /**
+     * Internal method to update state from current selection, with target element validation
+     */
+    private updateStateFromSelection(requireTargetElement: boolean = true): void {
+        const selection = document.getSelection();
+        
+        // Check if selection is within target element when required
+        if (requireTargetElement && 
+            (!selection || 
+             !selection.anchorNode || 
+             !this._targetElement.contains(selection.anchorNode))) {
+            return;
+        }
+
+        const newState = StateFactory.createFromSelection();
+        if (newState) {
+            this._currentState = newState;
+        }
+    }
+
     transition(event: Event): void {
         const eventType = event.type;
         if (eventType !== "selectionchange") {
             throw new Error(`Unhandled event type: ${eventType}`);
         }
-        // selectionchange가 발생한 시점에만 상태를 갱신
-        const range = getCurrentRange();
-        const selection = document.getSelection();
-        if (selection && selection.isCollapsed) {
-            this._currentState = new CursorState(
-                range.startContainer,
-                range.startOffset
-            );
-        } else if (selection) {
-            this._currentState = new RangeState(
-                range.startContainer,
-                range.startOffset,
-                range.endContainer,
-                range.endOffset,
-                getSelectionDirection(selection)
-            );
-        } else {
-            this._currentState = null as any;
-        }
+        this.updateStateFromSelection(false);
     }
 
     getState(): State {
@@ -196,30 +208,7 @@ export class SelectionStateMachine {
      */
     forceUpdate(): void {
         try {
-            const range = getCurrentRange();
-            const selection = document.getSelection();
-            
-            // Only update if the selection is within our target element
-            if (
-                selection &&
-                selection.anchorNode &&
-                this._targetElement.contains(selection.anchorNode)
-            ) {
-                if (selection.isCollapsed) {
-                    this._currentState = new CursorState(
-                        range.startContainer,
-                        range.startOffset
-                    );
-                } else {
-                    this._currentState = new RangeState(
-                        range.startContainer,
-                        range.startOffset,
-                        range.endContainer,
-                        range.endOffset,
-                        getSelectionDirection(selection)
-                    );
-                }
-            }
+            this.updateStateFromSelection(true);
         } catch (error) {
             // If there's no valid selection, keep the current state
             console.warn("SelectionStateMachine.forceUpdate(): No valid selection found", error);
