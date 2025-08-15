@@ -2,9 +2,12 @@ import { Synchronizer } from "../syncronizer/syncronizer.ts";
 import { DomNode } from "../dom/dom-node.ts";
 import { position } from "./selection/position.ts";
 import { DomVDomConverter } from "../shared/dom-vdom-converter.ts";
+import { CommandBase } from "./command.base.ts";
 
-export class BackspaceHandler {
-    constructor(private sync: Synchronizer) {}
+export class BackspaceHandler extends CommandBase {
+    private constructor(sync: Synchronizer) {
+        super(sync);
+    }
 
     handleParagraph(paragraph: DomNode, event: KeyboardEvent) {
         // 단락에서 백스페이스 처리

@@ -7,7 +7,7 @@ import { position } from "./selection/position.ts";
 import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
 
 export class DeleteHandler extends CommandBase {
-    private constructor(private sync: Synchronizer) {
+    private constructor(sync: Synchronizer) {
         super(sync);
     }
 

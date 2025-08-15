@@ -7,7 +7,7 @@ import { SelectionStateMachine } from "../state-machine/selection.state-machine.
 import { range, rangeText } from "./selection/range.ts";
 
 export class ShortcutFormat extends CommandBase {
-    private constructor(private sync: Synchronizer) {
+    private constructor(sync: Synchronizer) {
         super(sync);
     }
 

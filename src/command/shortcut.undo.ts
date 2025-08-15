@@ -2,7 +2,7 @@ import { Synchronizer } from "../syncronizer/syncronizer.ts";
 import { CommandBase } from "./command.base.ts";
 
 export class ShortcutUndo extends CommandBase {
-    private constructor(private sync: Synchronizer) {
+    private constructor(sync: Synchronizer) {
         super(sync);
     }
 

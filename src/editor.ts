@@ -4,8 +4,6 @@ import { Synchronizer } from "./syncronizer/syncronizer";
 import { CompositionStateMachine } from "./state-machine/composition.state-machine";
 import { SelectionStateMachine } from "./state-machine/selection.state-machine";
 import { Command } from "./command/command";
-import { BackspaceHandler } from "./command/backspace.handler";
-import { EnterHandler } from "./command/enter.handler";
 import { VDomNodeType } from "./vdom/vdom-node.enum";
 
 export class Editor {
@@ -14,8 +12,6 @@ export class Editor {
     public readonly sync: Synchronizer;
     public readonly selectionStateMachine: SelectionStateMachine;
     public readonly compositionStateMachine: CompositionStateMachine;
-    public readonly backspaceHandler: BackspaceHandler;
-    public readonly enterHandler: EnterHandler;
     public readonly command: Command;
 
     constructor(editorId: string) {
@@ -32,15 +28,11 @@ export class Editor {
             this.selectionStateMachine
         );
         this.appendInitialParagraph();
-        this.backspaceHandler = new BackspaceHandler(this.sync);
-        this.enterHandler = new EnterHandler(this.sync);
         this.command = new Command(
             this.sync,
             editorDiv,
             this.compositionStateMachine,
-            this.selectionStateMachine,
-            this.backspaceHandler,
-            this.enterHandler
+            this.selectionStateMachine
         );
     }
 
