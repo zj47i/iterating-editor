@@ -232,9 +232,44 @@ export class Synchronizer {
         if (spanVDomNode.type !== "span") {
             throw new Error("spanVDomNode is not span");
         }
+        
+        // Capture current cursor position if it's in this span
+        const currentCursor = this.getCurrentCursorPosition();
+        let shouldRestoreCursor = false;
+        let cursorOffset = 0;
+        
+        if (currentCursor) {
+            const span = this.findDomNodeFrom(spanVDomNode);
+            const spanElement = span.getElement();
+            
+            // Check if cursor is in this span's text node
+            if (currentCursor.startContainer === spanElement.firstChild && 
+                currentCursor.startContainer?.nodeType === Node.TEXT_NODE) {
+                shouldRestoreCursor = true;
+                cursorOffset = currentCursor.startOffset;
+                
+                // Adjust cursor offset if it would be beyond the new text length
+                if (cursorOffset > text.length) {
+                    cursorOffset = text.length;
+                }
+            }
+        }
+        
         spanVDomNode.setText(text);
         const span = this.findDomNodeFrom(spanVDomNode);
         span.getElement().textContent = text;
+        
+        // Restore cursor position if it was in this span
+        if (shouldRestoreCursor && span.getElement().firstChild?.nodeType === Node.TEXT_NODE) {
+            const selection = document.getSelection();
+            if (selection) {
+                const range = document.createRange();
+                range.setStart(span.getElement().firstChild!, cursorOffset);
+                range.setEnd(span.getElement().firstChild!, cursorOffset);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
     }
 
     @HookBefore<Synchronizer>(Synchronizer.prototype.createUndoSnapshot)
