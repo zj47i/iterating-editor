@@ -16,9 +16,7 @@ export class Command {
         private sync: Synchronizer,
         private target: EventTarget,
         private compositionStateMachine: CompositionStateMachine,
-        private selectionStateMachine: SelectionStateMachine,
-        private backspaceHandler: BackspaceHandler,
-        private enterHandler: EnterHandler
+        private selectionStateMachine: SelectionStateMachine
     ) {
         this.target.addEventListener(
             "editorinput",
@@ -62,7 +60,8 @@ export class Command {
             if (this.selectionStateMachine.isCursor()) {
                 const cursorState = this.selectionStateMachine.getState();
                 if (cursorState.startContainer instanceof Text) {
-                    this.enterHandler.handleTextNodeLineUp(
+                    const enterHandler = EnterHandler.getInstance<EnterHandler>(this.sync);
+                    enterHandler.handleTextNodeLineUp(
                         cursorState.startContainer,
                         cursorState.startOffset
                     );
@@ -70,7 +69,8 @@ export class Command {
                     cursorState.startContainer instanceof HTMLElement &&
                     cursorState.startContainer.nodeName === "P"
                 ) {
-                    this.enterHandler.handleParagraph(
+                    const enterHandler = EnterHandler.getInstance<EnterHandler>(this.sync);
+                    enterHandler.handleParagraph(
                         DomNode.fromExistingElement(cursorState.startContainer)
                     );
                 }
@@ -97,7 +97,8 @@ export class Command {
                 if (!(currentSelectionState.startContainer instanceof Text)) {
                     throw new Error("anchorNode is not Text");
                 }
-                this.backspaceHandler.handleTextNodeLineUp(
+                const backspaceHandler = BackspaceHandler.getInstance<BackspaceHandler>(this.sync);
+                backspaceHandler.handleTextNodeLineUp(
                     currentSelectionState.startContainer,
                     event
                 );
@@ -111,7 +112,8 @@ export class Command {
                 if (!(currentSelectionState.startContainer instanceof Text)) {
                     throw new Error("anchorNode is not Text");
                 }
-                this.backspaceHandler.handleEmptyTextNode(
+                const backspaceHandler = BackspaceHandler.getInstance<BackspaceHandler>(this.sync);
+                backspaceHandler.handleEmptyTextNode(
                     currentSelectionState.startContainer
                 );
             } else if (currentSelectionState.startContainer.nodeName === "P") {
@@ -125,7 +127,8 @@ export class Command {
                 ) {
                     throw new Error("anchorNode is not HTMLElement");
                 }
-                this.backspaceHandler.handleParagraph(
+                const backspaceHandler = BackspaceHandler.getInstance<BackspaceHandler>(this.sync);
+                backspaceHandler.handleParagraph(
                     DomNode.fromExistingElement(
                         currentSelectionState.startContainer
                     ),

@@ -9,7 +9,7 @@ export interface InputPayload {
 }
 
 export class InputHandler extends CommandBase {
-    private constructor(private sync: Synchronizer) {
+    private constructor(sync: Synchronizer) {
         super(sync);
     }
 

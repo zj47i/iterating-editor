@@ -3,9 +3,12 @@ import { DomNode } from "../dom/dom-node.ts";
 import { VDomNode } from "../vdom/vdom-node.ts";
 import { VDomNodeType } from "../vdom/vdom-node.enum.ts";
 import { position } from "./selection/position.ts";
+import { CommandBase } from "./command.base.ts";
 
-export class EnterHandler {
-    constructor(private sync: Synchronizer) {}
+export class EnterHandler extends CommandBase {
+    private constructor(sync: Synchronizer) {
+        super(sync);
+    }
 
     handleParagraph(paragraph: DomNode) {
         // 단락에서 Enter 처리
