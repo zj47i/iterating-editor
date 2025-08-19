@@ -62,6 +62,37 @@ export class BackspaceHandler extends CommandBase {
         event.preventDefault();
     }
 
+    handleTextNodeBackspace(textNode: Text, cursorPosition: number, event: KeyboardEvent) {
+        console.info("BackspaceTextNodeBackspace$ at position", cursorPosition);
+        if (textNode.parentElement === null) {
+            throw new Error("textNode.parentElement is null");
+        }
+        if (textNode.textContent === null) {
+            throw new Error("textNode.textContent is null");
+        }
+        
+        const span = DomNode.fromExistingElement(textNode.parentElement);
+        const vSpan = this.sync.findVDomNodeFrom(span);
+        
+        // Remove the character before the cursor position
+        const currentText = textNode.textContent;
+        const newText = currentText.slice(0, cursorPosition - 1) + currentText.slice(cursorPosition);
+        
+        // Update the VDOM with the new text
+        this.sync.setText(vSpan, newText);
+        
+        // Position cursor at the new location (one character back)
+        const newPosition = cursorPosition - 1;
+        
+        // Find the updated text node and position cursor
+        const updatedTextNode = span.getElement().firstChild;
+        if (updatedTextNode instanceof Text) {
+            position(updatedTextNode, newPosition);
+        }
+        
+        event.preventDefault();
+    }
+
     handleEmptyTextNode(textNode: Text) {
         // 비어있는 텍스트 노드에서 백스페이스 처리
         if (textNode.parentElement === null) {
