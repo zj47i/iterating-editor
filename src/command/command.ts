@@ -116,6 +116,22 @@ export class Command {
                 backspaceHandler.handleEmptyTextNode(
                     currentSelectionState.startContainer
                 );
+            } else if (
+                currentSelectionState.startContainer.nodeType ===
+                    Node.TEXT_NODE &&
+                currentSelectionState.startOffset > 1
+            ) {
+                console.info("Handling backspace in middle of text node");
+                event.preventDefault();
+                if (!(currentSelectionState.startContainer instanceof Text)) {
+                    throw new Error("anchorNode is not Text");
+                }
+                const backspaceHandler = BackspaceHandler.getInstance<BackspaceHandler>(this.sync);
+                backspaceHandler.handleTextNodeBackspace(
+                    currentSelectionState.startContainer,
+                    currentSelectionState.startOffset,
+                    event
+                );
             } else if (currentSelectionState.startContainer.nodeName === "P") {
                 console.info("Handling backspace at paragraph");
                 event.preventDefault();
