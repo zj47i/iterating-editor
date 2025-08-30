@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Test</title>
+    <style>
+        #editor {
+            width: 500px;
+            height: 300px;
+            border: 2px solid #ccc;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .instructions {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h3>Testing Backspace Range Selection Fix</h3>
+        <p><strong>Steps to test:</strong></p>
+        <ol>
+            <li>Type some text in the editor, creating multiple lines</li>
+            <li>Select a range of text that spans across lines or spans</li>
+            <li>Press Backspace - the selected text should be deleted</li>
+            <li>Before the fix: only one character would be deleted</li>
+            <li>After the fix: entire selected range should be deleted</li>
+        </ol>
+    </div>
+    
+    <div id="editor" contenteditable="true"></div>
+    
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

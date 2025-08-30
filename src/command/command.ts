@@ -87,6 +87,16 @@ export class Command {
 
         if (event.key === CommandKeyboardEvent.BACKSPACE) {
             console.info("Backspace key pressed");
+            
+            // Check if we have a range selection first, before handling cursor scenarios
+            if (this.selectionStateMachine.isRange()) {
+                console.info("Handling backspace for range selection");
+                event.preventDefault();
+                const deleteHandler = DeleteHandler.getInstance<DeleteHandler>(this.sync);
+                deleteHandler.execute(this.selectionStateMachine);
+                return;
+            }
+            
             if (
                 currentSelectionState.startContainer.nodeType ===
                     Node.TEXT_NODE &&
