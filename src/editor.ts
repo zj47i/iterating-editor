@@ -3,7 +3,6 @@ import { VDomNode } from "./vdom/vdom-node";
 import { Synchronizer } from "./syncronizer/syncronizer";
 import { CompositionStateMachine } from "./state-machine/composition.state-machine";
 import { SelectionStateMachine } from "./state-machine/selection.state-machine";
-import { Command } from "./command/command";
 import { VDomNodeType } from "./vdom/vdom-node.enum";
 
 export class Editor {
@@ -12,7 +11,6 @@ export class Editor {
     public readonly sync: Synchronizer;
     public readonly selectionStateMachine: SelectionStateMachine;
     public readonly compositionStateMachine: CompositionStateMachine;
-    public readonly command: Command;
 
     constructor(editorId: string) {
         const editorDiv = this.getEditorDiv(editorId);
@@ -28,12 +26,9 @@ export class Editor {
             this.selectionStateMachine
         );
         this.appendInitialParagraph();
-        this.command = new Command(
-            this.sync,
-            editorDiv,
-            this.compositionStateMachine,
-            this.selectionStateMachine
-        );
+        
+        // TODO: Add event handling here to replace command directory
+        console.log("Editor initialized - command directory removed");
     }
 
     // Resolve and validate editor root element

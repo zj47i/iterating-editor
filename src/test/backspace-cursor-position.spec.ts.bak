@@ -4,9 +4,8 @@ import { SelectionStateMachine } from "../state-machine/selection.state-machine"
 import { DomNode } from "../dom/dom-node";
 import { VDomNode } from "../vdom/vdom-node";
 import { VDomNodeType } from "../vdom/vdom-node.enum";
-import { Command } from "../command/command";
 import { CompositionStateMachine } from "../state-machine/composition.state-machine";
-import { position } from "../command/selection/position";
+import { position } from "../shared/selection-utils";
 import { mockSyncronizer } from "../syncronizer/test/syncronizer.mock.spec";
 
 describe("Backspace Cursor Position Issue", () => {
