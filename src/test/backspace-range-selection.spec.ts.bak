@@ -1,13 +1,12 @@
 import { describe, test, expect, beforeEach } from "@jest/globals";
-import { Synchronizer } from "../syncronizer/syncronizer.ts";
-import { SelectionStateMachine } from "../state-machine/selection.state-machine.ts";
-import { DomNode } from "../dom/dom-node.ts";
-import { VDomNode } from "../vdom/vdom-node.ts";
-import { VDomNodeType } from "../vdom/vdom-node.enum.ts";
-import { Command } from "../command/command.ts";
-import { CompositionStateMachine } from "../state-machine/composition.state-machine.ts";
-import { rangeText } from "../command/selection/range.ts";
-import { mockSyncronizer } from "../syncronizer/test/syncronizer.mock.spec.ts";
+import { Synchronizer } from "../syncronizer/syncronizer";
+import { SelectionStateMachine } from "../state-machine/selection.state-machine";
+import { DomNode } from "../dom/dom-node";
+import { VDomNode } from "../vdom/vdom-node";
+import { VDomNodeType } from "../vdom/vdom-node.enum";
+import { CompositionStateMachine } from "../state-machine/composition.state-machine";
+import { rangeText } from "../shared/selection-utils";
+import { mockSyncronizer } from "../syncronizer/test/syncronizer.mock.spec";
 
 describe("Backspace Range Selection Issue", () => {
     let container: HTMLDivElement;

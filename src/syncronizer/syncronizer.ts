@@ -1,4 +1,4 @@
-import { position } from "../command/selection/position";
+import { position } from "../shared/selection-utils";
 import { DomNode } from "../dom/dom-node";
 import { TextFormat } from "../enum/text-format";
 import { VDomNode } from "../vdom/vdom-node";
