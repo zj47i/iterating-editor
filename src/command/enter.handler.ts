@@ -22,7 +22,7 @@ export class EnterHandler extends CommandBase {
         position(nextSiblingParagraph.getElement(), 0);
     }
 
-    handleTextNodeLineUp(textNode: Text, cursorPosition: number) {
+    mergeTextNodeIntoPreviousNode(textNode: Text, cursorPosition: number) {
         console.info("EnterTextNode$");
         if (!(textNode.parentElement instanceof HTMLElement)) {
             throw new Error("parentElement is not HTMLElement");

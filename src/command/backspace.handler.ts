@@ -42,7 +42,7 @@ export class BackspaceHandler extends CommandBase {
         }
     }
 
-    handleTextNodeLineUp(textNode: Text, event: KeyboardEvent) {
+    mergeTextNodeIntoPreviousNode(textNode: Text, event: KeyboardEvent) {
         console.info("BackspaceTextNodeLineUp$");
         if (textNode.parentElement === null) {
             throw new Error("textNode.parentElement is null");

@@ -61,7 +61,7 @@ export class Command {
                 const cursorState = this.selectionStateMachine.getState();
                 if (cursorState.startContainer instanceof Text) {
                     const enterHandler = EnterHandler.getInstance<EnterHandler>(this.sync);
-                    enterHandler.handleTextNodeLineUp(
+                    enterHandler.mergeTextNodeIntoPreviousNode(
                         cursorState.startContainer,
                         cursorState.startOffset
                     );
@@ -98,7 +98,7 @@ export class Command {
                     throw new Error("anchorNode is not Text");
                 }
                 const backspaceHandler = BackspaceHandler.getInstance<BackspaceHandler>(this.sync);
-                backspaceHandler.handleTextNodeLineUp(
+                backspaceHandler.mergeTextNodeIntoPreviousNode(
                     currentSelectionState.startContainer,
                     event
                 );
